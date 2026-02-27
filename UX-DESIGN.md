@@ -44,7 +44,7 @@ On this following diagram, the user can view a bunch of information based on one
 
 This diagram outlines the "Organize Study Sync" option of the User's dashboard. This page allows the user to select and organize a meeting, as well as showing their upcoming and past meetings. 
 
-![Meeting Setup](<ux-design/iPhone 16 & 17 Pro Max - 7 (1).png>)
+![Meeting Setup](<ux-design/iPhone 16 & 17 Pro Max - 7.png>)
 
 The final part of the User Dashboard is the profile icon in the top right of the page. This profile icon leads to the user profile page, where several things can be done. Class schedules, preferred study locations and methods, as well as user profile details can all be edited in this page. These diagrams are laid out below. 
 
