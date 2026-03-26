@@ -1,0 +1,214 @@
+import { useState } from "react";
+import { styles } from "../styles";
+import BackButton from "./BackButton";
+
+export default function StudySyncMatches({ onBack }) {
+  const [matches] = useState([
+    {
+      id: 1,
+      username: "John_Doe",
+      location: "Bobst LL2",
+      method: "In-Person",
+      matchPercentage: 92,
+    },
+    {
+      id: 2,
+      username: "Sarah_Smith",
+      location: "NYU Library",
+      method: "Virtual",
+      matchPercentage: 87,
+    },
+    {
+      id: 3,
+      username: "Mike_Johnson",
+      location: "Coffee Shop",
+      method: "In-Person",
+      matchPercentage: 78,
+    },
+    {
+      id: 4,
+      username: "Emma_Wilson",
+      location: "Bobst LL2",
+      method: "Hybrid",
+      matchPercentage: 85,
+    },
+  ]);
+
+  return (
+    <div style={styles.page}>
+      {/* Header with Back Button */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "24px",
+          gap: "16px",
+        }}
+      >
+        <BackButton onClick={onBack} />
+        <h1
+          style={{
+            fontSize: "24px",
+            fontWeight: "bold",
+            margin: 0,
+            letterSpacing: "0.1em",
+          }}
+        >
+          STUDY SYNC<br />
+          MATCHES
+        </h1>
+      </div>
+
+      {/* Filter and Sort Controls */}
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          marginBottom: "24px",
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: "bold",
+              marginBottom: "6px",
+              letterSpacing: "0.05em",
+            }}
+          >
+            FILTER BY:
+          </label>
+          <select
+            style={{
+              width: "100%",
+              padding: "8px",
+              border: "1px solid black",
+              backgroundColor: "white",
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            <option value="all">All Matches</option>
+            <option value="location">Bobst LL2</option>
+            <option value="method">In-Person</option>
+          </select>
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: "bold",
+              marginBottom: "6px",
+              letterSpacing: "0.05em",
+            }}
+          >
+            SORT BY:
+          </label>
+          <select
+            style={{
+              width: "100%",
+              padding: "8px",
+              border: "1px solid black",
+              backgroundColor: "white",
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            <option value="match">% Match</option>
+            <option value="name">Username</option>
+            <option value="location">Location</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Matches List */}
+      <div style={{ marginBottom: "16px" }}>
+        {matches.map((match) => (
+          <div
+            key={match.id}
+            style={{
+              display: "flex",
+              gap: "12px",
+              marginBottom: "12px",
+              padding: "12px",
+              border: "1px solid #ddd",
+              backgroundColor: "white",
+            }}
+          >
+            {/* Profile Placeholder */}
+            <div
+              style={{
+                width: "60px",
+                height: "60px",
+                backgroundColor: "#e0e0e0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px",
+                fontWeight: "bold",
+                flexShrink: 0,
+                color: "#999",
+              }}
+            >
+              PROFILE
+            </div>
+
+            {/* Match Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                  marginBottom: "4px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {match.username}
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  lineHeight: "1.5",
+                  color: "#333",
+                }}
+              >
+                <div>
+                  <strong>Location:</strong> {match.location}
+                </div>
+                <div>
+                  <strong>Method:</strong> {match.method}
+                </div>
+                <div>
+                  <strong>% Match:</strong> {match.matchPercentage}%
+                </div>
+              </div>
+            </div>
+
+            {/* Add Button */}
+            <button
+              style={{
+                backgroundColor: "black",
+                color: "white",
+                border: "none",
+                padding: "8px 12px",
+                fontSize: "10px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                height: "fit-content",
+                alignSelf: "center",
+              }}
+            >
+              ADD
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
