@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
-// This is a simple profile page component that displays the user's name and email,
+
 export default function ProfilePage({
   goBack,
   onEditSchedule,
