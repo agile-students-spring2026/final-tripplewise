@@ -25,7 +25,6 @@ export default function App() {
         <StartUpPage 
           onSignUp={() => setPage("signup1")} 
           onLogin={() => setPage("dashboard")} 
-          onLogin={() => setPage("login")} 
         />
       )}
 
