@@ -1,8 +1,10 @@
+//App logic
 import { useState } from "react";
 import SignUpPageOne from "./components/SignUpPageOne";
 import SignUpPageTwo from "./components/SignUpPageTwo";
 import ProfileMatchPage from "./components/ProfileMatchPage";
 import UserDashboard from "./components/UserDashboard";
+import LoginPage from "./components/LoginPage";
 import StartUpPage from "./components/StartUpPage";
 import { styles } from "./styles";
 
@@ -12,10 +14,18 @@ export default function App() {
   return (
     <div style={styles.phoneScreen}>
 
+      {page === "login" && (
+        <LoginPage 
+          goBack={() => setPage("start")} 
+          onLogin={() => alert("add dashboard link here!")} 
+        />
+      )}
+
       {page === "start" && (
         <StartUpPage 
           onSignUp={() => setPage("signup1")} 
           onLogin={() => setPage("dashboard")} 
+          onLogin={() => setPage("login")} 
         />
       )}
 
