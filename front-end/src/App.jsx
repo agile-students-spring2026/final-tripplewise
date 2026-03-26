@@ -5,10 +5,18 @@ import ProfileMatchPage from "./components/ProfileMatchPage";
 import { styles } from "./styles";
 
 export default function App() {
-  const [page, setPage] = useState("signup1");
-
+  const [page, setPage] = useState("start");
+  
   return (
     <div style={styles.phoneScreen}>
+
+      {page === "start" && (
+        <StartUpPage 
+          onSignUp={() => setPage("signup1")} 
+          onLogin={() => console.log("Login clicked")} 
+        />
+      )}
+
       {page === "signup1" && (
         <SignUpPageOne goNext={() => setPage("signup2")} />
       )}
