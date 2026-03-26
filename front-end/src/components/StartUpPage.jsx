@@ -1,4 +1,4 @@
-
+//this should be the first page in the app
 import React from "react";
 import { styles } from "../styles";
 
