@@ -12,7 +12,7 @@ export default function ProfilePage({
   user: propUser,
 }) {
   const [user, setUser] = useState(propUser || { name: "Student", email: "" });
-
+  // Load user from localStorage if not provided
   useEffect(() => {
     if (!propUser) {
       try {
@@ -23,7 +23,7 @@ export default function ProfilePage({
       }
     }
   }, [propUser]);
-
+  // Handle callback or alert fallback message
   const handle = (cb, fallbackMsg) => {
     if (typeof cb === "function") cb();
     else alert(fallbackMsg);
