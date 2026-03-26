@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { styles } from "../styles";
 
-export default function UserDashboard({ onLogout }) {
+export default function UserDashboard({ onLogout, onFindMatches }) {
   const [studySyncs] = useState([
     {
       id: 1,
@@ -53,7 +53,7 @@ export default function UserDashboard({ onLogout }) {
   const [selectedTab, setSelectedTab] = useState("syncs");
 
   const handleFindMatches = () => {
-    console.log("Find New Matches clicked");
+    onFindMatches();
   };
 
   const handleOrganizeStudy = () => {
