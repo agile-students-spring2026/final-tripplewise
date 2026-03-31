@@ -12,6 +12,7 @@ import EditSchedule from "./components/EditSchedule";
 import EditStudyLocations from "./components/EditStudyLocations";
 import EditStudyMethods from "./components/EditStudyMethods";
 import EditAccountDetails from "./components/EditAccountDetails";
+import StudySyncMeetings from "./components/StudySyncMeetings";
 import { styles } from "./styles";
 
 export default function App() {
@@ -28,14 +29,14 @@ export default function App() {
       {page === "start" && (
         <StartUpPage 
           onSignUp={() => setPage("signup1")} 
-          onLogin={() => setPage("dashboard")} 
+          onLogin={() => setPage("login")} 
         />
       )}
 
       {page === "login" && (
         <LoginPage 
           goBack={() => setPage("start")} 
-          onLogin={() => alert("add dashboard link here!")} 
+          onLogin={() => setPage("dashboard")} 
         />
       )}
 
@@ -65,6 +66,7 @@ export default function App() {
           onLogout={() => setPage("start")}
           onFindMatches={() => setPage("matches")}
           onProfile={() => setPage("userProfile")}
+          onOrganizeStudy={() => setPage("meetings")}
         />
       )}
 
@@ -98,6 +100,12 @@ export default function App() {
       {page === "editAccount" && (
         <EditAccountDetails goBack={() => setPage("userProfile")} />
       )}
+
+      {page === "meetings" && (
+        <StudySyncMeetings 
+          onBack={() => setPage("dashboard")} 
+          onSendRequest={(data) => {setPage("dashboard"); }} />
+)}
 
     </div>
   );
