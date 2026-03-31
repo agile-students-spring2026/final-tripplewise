@@ -22,8 +22,18 @@ export default function ProfileMatchPage({ goBack, goNext }) {
       </div>
 
       {/* PROFILE IMAGE */}
-      <div style={styles.profileImageBox}>PROFILE</div>
-
+      {/* PROFILE IMAGE */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={goNext}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goNext(); }}
+        style={{ ...styles.profileImageBox, cursor: 'pointer' }}
+        aria-label="View profile"
+      >
+        PROFILE
+      </div>
+      
       {/* USERNAME */}
       <div style={styles.usernameBox}>USERNAME</div>
 

@@ -1,8 +1,9 @@
+// ...existing code...
 import { useState, useMemo } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
-export default function StudySyncMatches({ onBack }) {
+export default function StudySyncMatches({ onBack, onViewProfile }) {
   const [matches] = useState([
     {
       id: 1,
@@ -171,8 +172,14 @@ export default function StudySyncMatches({ onBack }) {
                 backgroundColor: "white",
               }}
             >
-              {/* Profile Placeholder */}
+              {/* Profile Placeholder - clickable */}
               <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onViewProfile?.(match)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onViewProfile?.(match);
+                }}
                 style={{
                   width: "60px",
                   height: "60px",
@@ -184,7 +191,10 @@ export default function StudySyncMatches({ onBack }) {
                   fontWeight: "bold",
                   flexShrink: 0,
                   color: "#999",
+                  textDecoration: "none",
+                  cursor: "pointer",
                 }}
+                aria-label={`View ${match.username} profile`}
               >
                 PROFILE
               </div>
@@ -259,3 +269,4 @@ export default function StudySyncMatches({ onBack }) {
     </div>
   );
 }
+// ...existing code...
