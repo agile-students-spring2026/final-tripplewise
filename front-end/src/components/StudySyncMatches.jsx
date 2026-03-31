@@ -81,6 +81,7 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
             fontWeight: "bold",
             margin: 0,
             letterSpacing: "0.1em",
+            color: "#555"
           }}
         >
           STUDY SYNC<br />
