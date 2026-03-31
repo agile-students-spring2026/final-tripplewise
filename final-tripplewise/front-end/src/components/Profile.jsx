@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
-// This is the profile page
+
 export default function ProfilePage({
   goBack,
   onEditSchedule,

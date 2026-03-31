@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
-// This is the second page of the sign-up process.
+
 export default function SignUpPageTwo({ goBack, goNext, onSave }) {
   const [classes, setClasses] = useState([
     { id: Date.now(), name: "", time: "09:00" },
