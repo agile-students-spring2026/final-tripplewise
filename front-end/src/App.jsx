@@ -12,6 +12,7 @@ import EditSchedule from "./components/EditSchedule";
 import EditStudyLocations from "./components/EditStudyLocations";
 import EditStudyMethods from "./components/EditStudyMethods";
 import EditAccountDetails from "./components/EditAccountDetails";
+import SyncCompleted  from "./components/SyncCompleted";
 import { styles } from "./styles";
 
 export default function App() {
@@ -85,6 +86,10 @@ export default function App() {
 
       {page === "editAccount" && (
         <EditAccountDetails goBack={() => setPage("userProfile")} />
+      )}
+
+      {page === "syncCompleted" && (
+        <SyncCompleted onBackToDashboard={() => setPage("dashboard")} />
       )}
 
     </div>
