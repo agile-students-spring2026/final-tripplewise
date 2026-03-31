@@ -86,7 +86,7 @@ export default function ScheduleStudySync({ goBack }) {
     <div style={{ ...styles.page, padding: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
         <BackButton onClick={goBack} />
-        <h2 style={{ margin: 0 }}>Schedule a Study Sync</h2>
+        <h2 style={{ margin: 0, color: "#555" }}>Schedule a Study Sync</h2>
       </div>
 
       <div
@@ -103,18 +103,18 @@ export default function ScheduleStudySync({ goBack }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Operating Systems - Chapter 4"
-            style={{ width: "100%", padding: 8, fontSize: 13 }}
+            style={{ width: "90%", padding: 8, fontSize: 13 }}
           />
         </div>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
             <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: "100%", padding: 8 }} />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: "90%", padding: 8 }} />
           </div>
           <div style={{ width: 140 }}>
             <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Time</label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: "100%", padding: 8 }} />
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: "90%", padding: 8 }} />
           </div>
         </div>
 
@@ -141,7 +141,7 @@ export default function ScheduleStudySync({ goBack }) {
 
         <div style={{ marginBottom: 12 }}>
           <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Message (optional)</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} style={{ width: "100%", padding: 8, minHeight: 72 }} />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} style={{ width: "90%", padding: 8, minHeight: 72 }} />
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
@@ -153,7 +153,7 @@ export default function ScheduleStudySync({ goBack }) {
           </button>
           <button
             onClick={resetForm}
-            style={{ background: "#f1f1f1", padding: "10px 12px", border: "1px solid #ddd", cursor: "pointer" }}
+            style={{ background: "#f1f1f1", padding: "10px 12px", border: "2px solid #4d4747", cursor: "pointer", color: "#555" }}
           >
             RESET
           </button>

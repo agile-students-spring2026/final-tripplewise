@@ -25,7 +25,7 @@ export default function App() {
       {page === "start" && (
         <StartUpPage 
           onSignUp={() => setPage("signup1")} 
-          onLogin={() => setPage("dashboard")} 
+          onLogin={() => setPage("login")} 
         />
       )}
 
@@ -88,6 +88,7 @@ export default function App() {
         <ProfileMatchPage 
           profile={selectedMatchProfile}
           goBack={() => setPage("matches")}
+          goToDashboard={() => setPage("dashboard")}
         />
       )}
 

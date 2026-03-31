@@ -53,7 +53,7 @@ export default function SignUpPageTwo({ goBack, goNext, onSave }) {
         <BackButton onClick={goBack} />
       </div>
 
-      <h2 style={{ marginTop: 20 }}>Edit Schedule</h2>
+      <h2 style={{ marginTop: 20, color: "#555" }}>Edit Schedule</h2>
 
       <div style={{ width: "100%", maxWidth: 700 }}>
         {classes.map((c, idx) => (

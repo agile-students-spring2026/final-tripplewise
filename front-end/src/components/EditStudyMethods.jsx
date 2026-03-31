@@ -105,7 +105,8 @@ export default function EditStudyMethods({ goBack }) {
         fontSize: "24px",
         fontWeight: "bold",
         marginBottom: "20px",
-        textAlign: "center"
+        textAlign: "center",
+        color: "#555"
       }}>
         EDIT PREFERRED STUDY METHODS
       </h2>

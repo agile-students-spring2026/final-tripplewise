@@ -89,6 +89,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
             fontWeight: "bold",
             letterSpacing: "0.15em",
             margin: 0,
+            color: "#555",
           }}
         >
           USER'S DASHBOARD
@@ -101,9 +102,10 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
             backgroundColor: "#d0d0d0",
             border: "none",
             cursor: "pointer",
-            fontSize: "12px",
+            fontSize: "8px",
             fontWeight: "bold",
             borderRadius: "4px",
+            color: "#555",
           }}
           title="Profile"
         >
@@ -176,6 +178,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
             borderBottom: selectedTab === "syncs" ? "3px solid black" : "none",
             marginBottom: "-2px",
             letterSpacing: "0.05em",
+            color: "#555",
           }}
         >
           UPCOMING STUDY SYNCS
@@ -192,6 +195,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
             borderBottom: selectedTab === "requests" ? "3px solid black" : "none",
             marginBottom: "-2px",
             letterSpacing: "0.05em",
+            color: "#555",
           }}
         >
           MEETING REQUESTS
