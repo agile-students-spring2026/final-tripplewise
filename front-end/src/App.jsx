@@ -17,12 +17,7 @@ import { styles } from "./styles";
 
 export default function App() {
   const [page, setPage] = useState("start");
-  const [selectedProfile, setSelectedProfile] = useState(null);
 
-  function openProfile(profile) {
-    setSelectedProfile(profile);
-    setPage("profilePage");
-  }
   return (
     <div style={styles.phoneScreen}>
 
@@ -36,7 +31,7 @@ export default function App() {
       {page === "login" && (
         <LoginPage 
           goBack={() => setPage("start")} 
-          onLogin={() => alert("add dashboard link here!")} 
+          onLogin={() => setPage("dashboard")} 
         />
       )}
 
@@ -51,13 +46,6 @@ export default function App() {
         <SignUpPageTwo
           goBack={() => setPage("signup1")}
           goNext={() => setPage("login")}
-        />
-      )}
-
-      {page === "profilePage" && (
-        <Profile 
-          profile={selectedProfile}
-          goBack={() => setPage("matches")}
         />
       )}
 
@@ -103,6 +91,10 @@ export default function App() {
 
       {page === "editAccount" && (
         <EditAccountDetails goBack={() => setPage("userProfile")} />
+      )}
+
+      {page === "syncCompleted" && (
+        <SyncCompleted onBackToDashboard={() => setPage("dashboard")} />
       )}
 
     </div>
