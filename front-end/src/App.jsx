@@ -6,6 +6,7 @@ import ProfileMatchPage from "./components/ProfileMatchPage";
 import UserDashboard from "./components/UserDashboard";
 import LoginPage from "./components/LoginPage";
 import StartUpPage from "./components/StartUpPage";
+import StudySyncMatches from "./components/StudySyncMatches";
 import { styles } from "./styles";
 
 export default function App() {
@@ -44,7 +45,14 @@ export default function App() {
       )}
 
       {page === "dashboard" && (
-        <UserDashboard onLogout={() => setPage("start")} />
+        <UserDashboard 
+          onLogout={() => setPage("start")}
+          onFindMatches={() => setPage("matches")}
+        />
+      )}
+
+      {page === "matches" && (
+        <StudySyncMatches onBack={() => setPage("dashboard")} />
       )}
     </div>
   );
