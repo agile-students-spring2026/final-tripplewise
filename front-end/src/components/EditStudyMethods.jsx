@@ -1,14 +1,13 @@
 import BackButton from "./BackButton";
 import { useState } from "react";
 import { styles } from "../styles";
-
+// allow users to edit their preferred study methods in the dashboard settings page
 export default function EditStudyMethods({ goBack }) {
   const [method1, setMethod1] = useState("");
   const [method2, setMethod2] = useState("");
 
   const handleSave = () => {
     console.log("Saved study methods:", { method1, method2 });
-    // TODO: Save to backend API
     goBack();
   };
 

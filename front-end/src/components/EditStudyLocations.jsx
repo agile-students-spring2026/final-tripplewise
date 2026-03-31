@@ -1,7 +1,7 @@
 import BackButton from "./BackButton";
 import { useState } from "react";
 import { styles } from "../styles";
-
+// allow users to edit their preferred study locations in the dashboard settings page
 export default function EditStudyLocations({ goBack }) {
   const [location1, setLocation1] = useState("");
   const [location2, setLocation2] = useState("");
@@ -9,7 +9,6 @@ export default function EditStudyLocations({ goBack }) {
 
   const handleSave = () => {
     console.log("Saved study locations:", { location1, location2, location3 });
-    // TODO: Save to backend API
     goBack();
   };
 

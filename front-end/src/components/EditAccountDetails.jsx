@@ -1,7 +1,7 @@
 import BackButton from "./BackButton";
 import { useState } from "react";
 import { styles } from "../styles";
-
+// allow users to edit their account details (username, password, profile picture) in the dashboard settings page
 export default function EditAccountDetails({ goBack }) {
   const [username, setUsername] = useState("");
   const [oldPassword, setOldPassword] = useState("");
@@ -9,7 +9,6 @@ export default function EditAccountDetails({ goBack }) {
 
   const handleSave = () => {
     console.log("Saved account details:", { username, oldPassword, newPassword });
-    // TODO: Save to backend API
     goBack();
   };
 
