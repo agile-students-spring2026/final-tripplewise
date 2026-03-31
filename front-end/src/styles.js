@@ -62,7 +62,8 @@ export const styles = {
     border: "1px solid black",
     padding: "8px",
     boxSizing: "border-box",
-    backgroundColor: "white"
+    backgroundColor: "white",
+    color: "black"
   },
 
   mainButton: {
@@ -74,5 +75,34 @@ export const styles = {
     fontSize: "16px",
     marginTop: "18px",
     cursor: "pointer"
-  }
+  },
+
+    doubleInputRow: {
+    display: "flex",
+    gap: "16px",
+    width: "100%",
+    marginBottom: "12px",
+  },
+
+  halfInputGroup: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  uploadBox: {
+    width: "100%",
+    height: "110px",
+    border: "1px solid #aaa",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "3rem",
+    fontWeight: "bold",
+    backgroundColor: "#f5f5f5",
+    marginTop: "8px",
+    marginBottom: "8px",
+    cursor: "pointer",
+  },
+
 };

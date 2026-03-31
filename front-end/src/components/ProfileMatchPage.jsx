@@ -1,7 +1,7 @@
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-export default function ProfileMatchPage({ goBack }) {
+export default function ProfileMatchPage({ goBack, goNext }) {
   return (
     <div style={styles.page}>
       <div style={styles.topRow}>
