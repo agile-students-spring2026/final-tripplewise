@@ -12,18 +12,15 @@ export default function ProfilePage({
   user: propUser,
 }) {
   const [user, setUser] = useState(propUser || { name: "Student", email: "" });
-
   useEffect(() => {
     if (!propUser) {
       try {
         const stored = localStorage.getItem("user");
         if (stored) setUser(JSON.parse(stored));
       } catch (e) {
-        // ignore
       }
     }
   }, [propUser]);
-
   const handle = (cb, fallbackMsg) => {
     if (typeof cb === "function") cb();
     else alert(fallbackMsg);
@@ -56,13 +53,14 @@ export default function ProfilePage({
               width: 72,
               height: 72,
               borderRadius: "50%",
-              background: "#2d9cdb",
+              background: "black",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "white",
               fontSize: 28,
               fontWeight: 600,
+              borderRadius: "8px"
             }}
           >
             {initials}
@@ -80,7 +78,7 @@ export default function ProfilePage({
             onClick={() => handle(onEditSchedule, "Edit Schedule")}
             style={{
               padding: "12px 16px",
-              background: "#3498db",
+              background: "grey",
               color: "white",
               border: "none",
               cursor: "pointer",
@@ -97,7 +95,7 @@ export default function ProfilePage({
             }
             style={{
               padding: "12px 16px",
-              background: "#6c5ce7",
+              background: "grey",
               color: "white",
               border: "none",
               cursor: "pointer",
@@ -114,7 +112,7 @@ export default function ProfilePage({
             }
             style={{
               padding: "12px 16px",
-              background: "#00b894",
+              background: "grey",
               color: "white",
               border: "none",
               cursor: "pointer",
@@ -129,7 +127,7 @@ export default function ProfilePage({
             onClick={() => handle(onEditAccount, "Edit account details")}
             style={{
               padding: "12px 16px",
-              background: "#f39c12",
+              background: "grey",
               color: "white",
               border: "none",
               cursor: "pointer",
@@ -144,7 +142,7 @@ export default function ProfilePage({
             onClick={() => handle(onLogout, "Logout")}
             style={{
               padding: "12px 16px",
-              background: "#e74c3c",
+              background: "grey",
               color: "white",
               border: "none",
               cursor: "pointer",

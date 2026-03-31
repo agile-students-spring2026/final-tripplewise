@@ -15,14 +15,14 @@ export default function SignUpPageTwo({ goBack, goNext, onSave }) {
       // ignore
     }
   }, []);
-
+  // Add a new class to the schedule
   function addClass() {
     setClasses((prev) => [
       ...prev,
       { id: Date.now() + Math.random(), name: "", time: "09:00" },
     ]);
   }
-
+  // Update an existing class in the schedule
   function updateClass(idx, field, value) {
     setClasses((prev) => {
       const next = [...prev];
