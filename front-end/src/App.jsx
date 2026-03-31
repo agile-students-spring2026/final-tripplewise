@@ -6,9 +6,7 @@ import ProfileMatchPage from "./components/ProfileMatchPage";
 import UserDashboard from "./components/UserDashboard";
 import LoginPage from "./components/LoginPage";
 import StartUpPage from "./components/StartUpPage";
-import EditStudyLocations from "./components/EditStudyLocations";
-import EditStudyMethods from "./components/EditStudyMethods";
-import EditAccountDetails from "./components/EditAccountDetails";
+import StudySyncMatches from "./components/StudySyncMatches";
 import { styles } from "./styles";
 
 export default function App() {
@@ -17,13 +15,6 @@ export default function App() {
   return (
     <div style={styles.phoneScreen}>
 
-      {page === "login" && (
-        <LoginPage 
-          goBack={() => setPage("start")} 
-          onLogin={() => alert("add dashboard link here!")} 
-        />
-      )}
-
       {page === "start" && (
         <StartUpPage 
           onSignUp={() => setPage("signup1")} 
@@ -31,14 +22,24 @@ export default function App() {
         />
       )}
 
+      {page === "login" && (
+        <LoginPage 
+          goBack={() => setPage("start")} 
+          onLogin={() => alert("add dashboard link here!")} 
+        />
+      )}
+
       {page === "signup1" && (
-        <SignUpPageOne goNext={() => setPage("signup2")} />
+        <SignUpPageOne 
+          goNext={() => setPage("signup2")} 
+          goBack={() => setPage("start")}
+        />
       )}
 
       {page === "signup2" && (
         <SignUpPageTwo
           goBack={() => setPage("signup1")}
-          goNext={() => setPage("profile")}
+          goNext={() => setPage("login")}
         />
       )}
 
@@ -47,7 +48,14 @@ export default function App() {
       )}
 
       {page === "dashboard" && (
-        <UserDashboard onLogout={() => setPage("start")} />
+        <UserDashboard 
+          onLogout={() => setPage("start")}
+          onFindMatches={() => setPage("matches")}
+        />
+      )}
+
+      {page === "matches" && (
+        <StudySyncMatches onBack={() => setPage("dashboard")} />
       )}
 
       {page === "editLocations" && (

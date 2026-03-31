@@ -1,11 +1,11 @@
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-export default function SignUpPageOne({ goNext }) {
+export default function SignUpPageOne({ goNext, goBack }) {
   return (
     <div style={styles.page}>
       <div style={styles.topRow}>
-        <BackButton onClick={() => alert("Back button clicked")} />
+        <BackButton onClick={goBack} />
       </div>
 
       <h1 style={styles.bigTitle}>SIGN UP</h1>
