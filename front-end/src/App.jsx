@@ -17,6 +17,7 @@ import { styles } from "./styles";
 
 export default function App() {
   const [page, setPage] = useState("start");
+  const [selectedMatchProfile, setSelectedMatchProfile] = useState(null);
 
   return (
     <div style={styles.phoneScreen}>
@@ -74,7 +75,20 @@ export default function App() {
       )}
 
       {page === "matches" && (
-        <StudySyncMatches onBack={() => setPage("dashboard")} />
+        <StudySyncMatches 
+          onBack={() => setPage("dashboard")}
+          onViewProfile={(match) => {
+            setSelectedMatchProfile(match);
+            setPage("matchProfile");
+          }}
+        />
+      )}
+
+      {page === "matchProfile" && selectedMatchProfile && (
+        <ProfileMatchPage 
+          profile={selectedMatchProfile}
+          goBack={() => setPage("matches")}
+        />
       )}
 
       {page === "editSchedule" && (
