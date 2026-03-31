@@ -97,6 +97,13 @@ export default function App() {
         <SyncCompleted onBackToDashboard={() => setPage("dashboard")} />
       )}
 
+      {page === "syncMatch" && (
+        <StudySyncMeetings 
+          onBack={() => setPage("dashboard")} 
+          onSendRequest={() => setPage("syncCompleted")} 
+        />
+      )}
+
     </div>
   );
 }
