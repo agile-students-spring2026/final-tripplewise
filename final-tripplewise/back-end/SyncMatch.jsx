@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { styles } from "../styles";
+import { styles } from "../front-end/src/styles";
 
 export default function SyncMatch({ users: propUsers = [] }) {
   // sample fallback data since none is provided 
