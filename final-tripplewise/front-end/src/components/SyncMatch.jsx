@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { styles } from "../front-end/src/styles";
+import { styles } from "../styles";
 
 export default function SyncMatch({ users: propUsers = [] }) {
-  // sample fallback data since none is provided 
+  // In a real app, the users data would come from props or an API call. For this example, we'll use hardcoded sample data if no users are provided via props.
   const sample = [
     {
       id: 1,
