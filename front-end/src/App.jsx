@@ -57,6 +57,19 @@ export default function App() {
       {page === "matches" && (
         <StudySyncMatches onBack={() => setPage("dashboard")} />
       )}
+
+      {page === "editLocations" && (
+        <EditStudyLocations goBack={() => setPage("dashboard")} />
+      )}
+
+      {page === "editMethods" && (
+        <EditStudyMethods goBack={() => setPage("dashboard")} />
+      )}
+
+      {page === "editAccount" && (
+        <EditAccountDetails goBack={() => setPage("dashboard")} />
+      )}
+
     </div>
   );
 }
