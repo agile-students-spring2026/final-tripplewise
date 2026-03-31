@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { styles } from "../styles";
 
-export default function UserDashboard({ onLogout, onFindMatches }) {
+export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOrganizeSyncs }) {
   const [studySyncs] = useState([
     {
       id: 1,
@@ -57,8 +57,8 @@ export default function UserDashboard({ onLogout, onFindMatches }) {
   };
 
   const handleOrganizeStudy = () => {
-    console.log("Organize Study Syncs clicked");
-  };
+    onOrganizeSyncs();
+  }
 
   const handleApproveMeeting = (id) => {
     setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
@@ -89,20 +89,23 @@ export default function UserDashboard({ onLogout, onFindMatches }) {
             fontWeight: "bold",
             letterSpacing: "0.15em",
             margin: 0,
+            color: "#555",
           }}
         >
           USER'S DASHBOARD
         </h1>
         <button
+          onClick={onProfile}
           style={{
             width: "48px",
             height: "48px",
             backgroundColor: "#d0d0d0",
             border: "none",
             cursor: "pointer",
-            fontSize: "12px",
+            fontSize: "8px",
             fontWeight: "bold",
             borderRadius: "4px",
+            color: "#555",
           }}
           title="Profile"
         >
@@ -175,6 +178,7 @@ export default function UserDashboard({ onLogout, onFindMatches }) {
             borderBottom: selectedTab === "syncs" ? "3px solid black" : "none",
             marginBottom: "-2px",
             letterSpacing: "0.05em",
+            color: "#555",
           }}
         >
           UPCOMING STUDY SYNCS
@@ -191,6 +195,7 @@ export default function UserDashboard({ onLogout, onFindMatches }) {
             borderBottom: selectedTab === "requests" ? "3px solid black" : "none",
             marginBottom: "-2px",
             letterSpacing: "0.05em",
+            color: "#555",
           }}
         >
           MEETING REQUESTS

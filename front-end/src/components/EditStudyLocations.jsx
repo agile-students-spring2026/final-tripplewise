@@ -1,38 +1,96 @@
 import BackButton from "./BackButton";
 import { useState } from "react";
 import { styles } from "../styles";
-// allow users to edit their preferred study locations in the dashboard settings page
+
+const customStyles = {
+  ...styles,
+  dropdown: {
+    width: "100%",
+    height: "34px",
+    borderRadius: "12px",
+    border: "1px solid black",
+    padding: "8px",
+    boxSizing: "border-box",
+    backgroundColor: "white",
+    fontSize: "14px"
+  },
+  checkboxContainer: {
+    display: "flex",
+    alignItems: "center",
+    marginBottom: "12px",
+    padding: "12px",
+    backgroundColor: "white",
+    border: "2px solid #ddd",
+    borderRadius: "8px",
+    cursor: "pointer"
+  },
+  checkbox: {
+    width: "20px",
+    height: "20px",
+    borderRadius: "4px",
+    backgroundColor: "transparent",
+    border: "2px solid #4CAF50",
+    marginRight: "12px"
+  },
+  checkboxChecked: {
+    backgroundColor: "#4CAF50"
+  },
+  locationItem: {
+    fontSize: "14px",
+    fontWeight: "normal"
+  },
+  locationItemChecked: {
+    fontWeight: "bold"
+  }
+};
+
 export default function EditStudyLocations({ goBack }) {
-  const [location1, setLocation1] = useState("");
-  const [location2, setLocation2] = useState("");
-  const [location3, setLocation3] = useState("");
+  const [selectedLocations, setSelectedLocations] = useState([
+    "Bobst Library",
+    "Courant Institute"
+  ]);
+  const [customLocation, setCustomLocation] = useState("");
+
+  const studyLocations = [
+    "Bobst Library",
+    "Courant Institute", 
+    "Tandon School of Engineering",
+    "Brooklyn Campus",
+    "Washington Square Park",
+    "NYU Kimmel Center",
+    "NYU Tisch School of the Arts",
+    "NYU Stern School of Business",
+    "NYU School of Law",
+    "NYU School of Medicine",
+    "NYU Shanghai",
+    "NYU Abu Dhabi"
+  ];
+
+  const handleLocationToggle = (location) => {
+    setSelectedLocations(prev => 
+      prev.includes(location) 
+        ? prev.filter(l => l !== location)
+        : [...prev, location]
+    );
+  };
+
+  const handleAddCustomLocation = () => {
+    if (customLocation.trim() && !selectedLocations.includes(customLocation.trim())) {
+      setSelectedLocations(prev => [...prev, customLocation.trim()]);
+      setCustomLocation("");
+    }
+  };
+
+  const handleRemoveCustomLocation = (location) => {
+    if (!studyLocations.includes(location)) {
+      setSelectedLocations(prev => prev.filter(l => l !== location));
+    }
+  };
 
   const handleSave = () => {
-    console.log("Saved study locations:", { location1, location2, location3 });
+    console.log("Saved study locations:", selectedLocations);
+    // TODO: Save to backend API
     goBack();
-  };
-
-  const labelStyle = {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: "bold",
-    marginBottom: "8px",
-    letterSpacing: "0.05em",
-    fontFamily: "serif",
-    color: "black",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    height: "36px",
-    border: "1px solid black",
-    backgroundColor: "white",
-    padding: "6px 10px",
-    boxSizing: "border-box",
-    fontSize: "14px",
-    borderRadius: "0",
-    color: "black",
-    outline: "none",
   };
 
   return (
@@ -41,70 +99,175 @@ export default function EditStudyLocations({ goBack }) {
         <BackButton onClick={goBack} />
       </div>
 
-      <h2
-        style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          textAlign: "center",
-          marginBottom: "28px",
-          letterSpacing: "0.05em",
-          fontFamily: "serif",
-          color: "black",
-        }}
-      >
-        Edit Preferred Study Locations
+      <h2 style={{
+        fontSize: "24px",
+        fontWeight: "bold",
+        marginBottom: "20px",
+        textAlign: "center",
+        color: "#555"
+      }}>
+        EDIT PREFERRED STUDY LOCATIONS
       </h2>
 
-      {/* Location 1 */}
-      <div style={{ marginBottom: "16px" }}>
-        <label style={labelStyle}>Edit Preferred Study Location 1:</label>
-        <input
-          type="text"
-          value={location1}
-          onChange={(e) => setLocation1(e.target.value)}
-          style={inputStyle}
-        />
+      <div style={{
+        marginBottom: "30px",
+        fontSize: "14px",
+        color: "#666",
+        textAlign: "center",
+        lineHeight: "1.6"
+      }}>
+        Select your preferred study locations. You can choose multiple options.
       </div>
 
-      {/* Location 2 */}
-      <div style={{ marginBottom: "16px" }}>
-        <label style={labelStyle}>Edit Preferred Study Location 2:</label>
-        <input
-          type="text"
-          value={location2}
-          onChange={(e) => setLocation2(e.target.value)}
-          style={inputStyle}
-        />
+      {/* Predefined Locations */}
+      <div style={{
+        marginBottom: "20px"
+      }}>
+        <div style={styles.label}>Select from popular locations:</div>
+        {studyLocations.map((location, index) => (
+          <div
+            key={index}
+            style={{
+              ...customStyles.checkboxContainer,
+              backgroundColor: selectedLocations.includes(location) ? "#f0f0f0" : "white",
+              border: "2px solid " + (selectedLocations.includes(location) ? "#4CAF50" : "#ddd")
+            }}
+            onClick={() => handleLocationToggle(location)}
+          >
+            <div style={{
+              ...customStyles.checkbox,
+              ...(selectedLocations.includes(location) ? customStyles.checkboxChecked : {})
+            }}></div>
+            <span style={{
+              ...customStyles.locationItem,
+              ...(selectedLocations.includes(location) ? customStyles.locationItemChecked : {})
+            }}>
+              {location}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* Location 3 */}
-      <div style={{ marginBottom: "32px" }}>
-        <label style={labelStyle}>Edit Preferred Study Location 3:</label>
-        <input
-          type="text"
-          value={location3}
-          onChange={(e) => setLocation3(e.target.value)}
-          style={inputStyle}
-        />
+      {/* Custom Location Input */}
+      <div style={styles.formGroup}>
+        <div style={styles.label}>Add custom location:</div>
+        <div style={{
+          display: "flex",
+          gap: "8px"
+        }}>
+          <select style={customStyles.dropdown}>
+            <option value="">Select a location...</option>
+            {studyLocations.map((location, index) => (
+              <option key={index} value={location}>{location}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => {
+              const selected = document.querySelector('select').value;
+              if (selected && !selectedLocations.includes(selected)) {
+                setSelectedLocations(prev => [...prev, selected]);
+              }
+            }}
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "bold"
+            }}
+          >
+            Add
+          </button>
+        </div>
       </div>
 
-      {/* Save Changes Button */}
+      <div style={styles.formGroup}>
+        <div style={styles.label}>Or type custom location:</div>
+        <div style={{
+          display: "flex",
+          gap: "8px"
+        }}>
+          <input
+            type="text"
+            value={customLocation}
+            onChange={(e) => setCustomLocation(e.target.value)}
+            placeholder="Enter custom location"
+            style={styles.input}
+          />
+          <button
+            onClick={handleAddCustomLocation}
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "#2196F3",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "bold"
+            }}
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* Selected Custom Locations */}
+      <div style={{
+        marginBottom: "20px"
+      }}>
+        <div style={styles.label}>Your custom locations:</div>
+        {selectedLocations.filter(loc => !studyLocations.includes(loc)).map((location, index) => (
+          <div
+            key={`custom-${index}`}
+            style={{
+              ...customStyles.checkboxContainer,
+              backgroundColor: "#f0f0f0",
+              border: "2px solid #4CAF50"
+            }}
+          >
+            <div style={{
+              ...customStyles.checkbox,
+              ...customStyles.checkboxChecked
+            }}></div>
+            <span style={{
+              ...customStyles.locationItem,
+              ...customStyles.locationItemChecked
+            }}>
+              {location}
+            </span>
+            <button
+              onClick={() => handleRemoveCustomLocation(location)}
+              style={{
+                marginLeft: "auto",
+                padding: "4px 8px",
+                backgroundColor: "#f44336",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px"
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+
       <button
         onClick={handleSave}
         style={{
-          width: "100%",
-          backgroundColor: "black",
-          color: "white",
-          border: "none",
-          padding: "16px",
-          fontSize: "14px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          letterSpacing: "0.08em",
-          fontFamily: "serif",
+          ...styles.mainButton,
+          backgroundColor: "#4CAF50",
+          fontSize: "16px",
+          fontWeight: "bold"
         }}
       >
-        Save Changes
+        SAVE STUDY LOCATIONS
       </button>
     </div>
   );

@@ -34,7 +34,8 @@ export const styles = {
   bigTitle: {
     textAlign: "center",
     fontSize: "40px",
-    marginBottom: "30px"
+    marginBottom: "30px",
+    color: "#555"
   },
 
   stepsBox: {
@@ -77,17 +78,17 @@ export const styles = {
     cursor: "pointer"
   },
 
-    doubleInputRow: {
+  doubleInputRow: {
     display: "flex",
     gap: "16px",
     width: "100%",
-    marginBottom: "12px",
+    marginBottom: "12px"
   },
 
   halfInputGroup: {
     flex: 1,
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "column"
   },
 
   uploadBox: {
@@ -102,19 +103,20 @@ export const styles = {
     backgroundColor: "#f5f5f5",
     marginTop: "8px",
     marginBottom: "8px",
-    cursor: "pointer",
+    cursor: "pointer"
   },
 
-    profileImageBox: {
-    width: "180px",
-    height: "180px",
+  profileImageBox: {
+    width: "160px",
+    height: "160px",
     backgroundColor: "#d9d9d9",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "2rem",
-    fontWeight: "bold",
-    margin: "0 auto 24px auto",
+    fontSize: "1.2rem",
+    fontWeight: "700",
+    margin: "8px auto 20px auto",
+    boxSizing: "border-box"
   },
 
   usernameBox: {
@@ -122,9 +124,17 @@ export const styles = {
     border: "1px solid black",
     backgroundColor: "white",
     textAlign: "center",
-    padding: "14px 12px",
-    fontSize: "1.8rem",
-    marginBottom: "20px",
+    padding: "12px",
+    fontSize: "1.1rem",
+    marginBottom: "16px",
+    boxSizing: "border-box"
+  },
+
+  profileSectionLabel: {
+    display: "block",
+    fontSize: "14px",
+    marginBottom: "8px",
+    textTransform: "uppercase"
   },
 
   infoBox: {
@@ -132,26 +142,27 @@ export const styles = {
     border: "1px solid black",
     backgroundColor: "white",
     padding: "12px",
-    minHeight: "120px",
+    minHeight: "110px",
     marginTop: "8px",
+    boxSizing: "border-box"
   },
 
   infoText: {
-    margin: "0 0 18px 0",
-    fontSize: "1.1rem",
-    lineHeight: "1.3",
+    margin: "0 0 14px 0",
+    fontSize: "1rem",
+    lineHeight: "1.25"
   },
 
   matchText: {
     textAlign: "center",
-    fontSize: "3.2rem",
+    fontSize: "2rem",
     fontWeight: "bold",
-    margin: "24px 0",
+    margin: "20px 0"
   },
 
   messageBox: {
     width: "100%",
-    minHeight: "140px",
+    minHeight: "120px",
     border: "1px solid black",
     backgroundColor: "white",
     padding: "12px",
@@ -159,5 +170,18 @@ export const styles = {
     resize: "none",
     color: "black",
     marginTop: "8px",
+    boxSizing: "border-box"
+  },
+
+  profileActionButton: {
+    width: "100%",
+    backgroundColor: "black",
+    color: "white",
+    border: "none",
+    padding: "14px 12px",
+    fontSize: "16px",
+    marginTop: "18px",
+    cursor: "pointer",
+    boxSizing: "border-box"
   }
 };

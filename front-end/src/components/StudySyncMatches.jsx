@@ -1,8 +1,9 @@
+// ...existing code...
 import { useState, useMemo } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
-export default function StudySyncMatches({ onBack }) {
+export default function StudySyncMatches({ onBack, onViewProfile }) {
   const [matches] = useState([
     {
       id: 1,
@@ -80,6 +81,7 @@ export default function StudySyncMatches({ onBack }) {
             fontWeight: "bold",
             margin: 0,
             letterSpacing: "0.1em",
+            color: "#555"
           }}
         >
           STUDY SYNC<br />
@@ -160,8 +162,9 @@ export default function StudySyncMatches({ onBack }) {
       <div style={{ marginBottom: "16px" }}>
         {sortedMatches.length > 0 ? (
           sortedMatches.map((match) => (
-            <div
+            <button
               key={match.id}
+              onClick={() => onViewProfile?.(match)}
               style={{
                 display: "flex",
                 gap: "12px",
@@ -169,6 +172,10 @@ export default function StudySyncMatches({ onBack }) {
                 padding: "12px",
                 border: "1px solid #ddd",
                 backgroundColor: "white",
+                cursor: "pointer",
+                width: "100%",
+                boxSizing: "border-box",
+                alignItems: "flex-start",
               }}
             >
               {/* Profile Placeholder */}
@@ -223,7 +230,7 @@ export default function StudySyncMatches({ onBack }) {
               </div>
 
               {/* Add Button */}
-              <button
+              <div
                 style={{
                   backgroundColor: "black",
                   color: "white",
@@ -238,8 +245,8 @@ export default function StudySyncMatches({ onBack }) {
                 }}
               >
                 ADD
-              </button>
-            </div>
+              </div>
+            </button>
           ))
         ) : (
           <div
