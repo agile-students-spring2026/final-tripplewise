@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { styles } from "../styles";
 
-export default function UserDashboard({ onLogout, onFindMatches, onProfile }) {
+export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOrganizeSyncs }) {
   const [studySyncs] = useState([
     {
       id: 1,
@@ -57,8 +57,8 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile }) {
   };
 
   const handleOrganizeStudy = () => {
-    console.log("Organize Study Syncs clicked");
-  };
+    onOrganizeSyncs();
+  }
 
   const handleApproveMeeting = (id) => {
     setMeetingRequests(meetingRequests.filter((req) => req.id !== id));

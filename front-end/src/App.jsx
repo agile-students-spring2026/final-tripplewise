@@ -12,7 +12,7 @@ import EditSchedule from "./components/EditSchedule";
 import EditStudyLocations from "./components/EditStudyLocations";
 import EditStudyMethods from "./components/EditStudyMethods";
 import EditAccountDetails from "./components/EditAccountDetails";
-import SyncCompleted  from "./components/SyncCompleted";
+import SyncMatch from "./components/SyncMatch";
 import { styles } from "./styles";
 
 export default function App() {
@@ -55,6 +55,7 @@ export default function App() {
           onLogout={() => setPage("start")}
           onFindMatches={() => setPage("matches")}
           onProfile={() => setPage("userProfile")}
+          onOrganizeSyncs={() => setPage("syncmatch")}
         />
       )}
 
@@ -67,6 +68,10 @@ export default function App() {
           onEditAccount={() => setPage("editAccount")}
           onLogout={() => setPage("start")}
         />
+      )}
+      {page === "syncmatch" && (
+      <SyncMatch 
+      goBack={() => setPage("dashboard")} />
       )}
 
       {page === "matches" && (
