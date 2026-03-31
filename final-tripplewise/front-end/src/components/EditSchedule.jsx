@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import BackButton from "../front-end/src/components/BackButton";
-import { styles } from "../front-end/src/styles";
+import BackButton from "./BackButton";
+import { styles } from "../styles";
 // This is the second page of the sign-up process, where users can edit their schedule.
 export default function SignUpPageTwo({ goBack, goNext, onSave }) {
   const [classes, setClasses] = useState([
