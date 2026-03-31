@@ -18,7 +18,8 @@ export default function StartUpPage({ onLogin, onSignUp }) {
         ...styles.bigTitle, 
         textAlign: "center", 
         marginTop: "30px",
-        marginBottom: "10px" 
+        marginBottom: "10px",
+        color: "#555" 
       }}>
         Study Sync
       </h1>

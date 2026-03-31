@@ -103,7 +103,8 @@ export default function EditStudyLocations({ goBack }) {
         fontSize: "24px",
         fontWeight: "bold",
         marginBottom: "20px",
-        textAlign: "center"
+        textAlign: "center",
+        color: "#555"
       }}>
         EDIT PREFERRED STUDY LOCATIONS
       </h2>

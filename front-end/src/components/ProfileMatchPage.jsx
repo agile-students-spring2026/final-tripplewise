@@ -1,7 +1,7 @@
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-export default function ProfileMatchPage({ goBack, goNext }) {
+export default function ProfileMatchPage({ goBack, goToDashboard }) {
   return (
     <div style={styles.page}>
 
@@ -22,15 +22,7 @@ export default function ProfileMatchPage({ goBack, goNext }) {
       </div>
 
       {/* PROFILE IMAGE */}
-      {/* PROFILE IMAGE */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={goNext}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goNext(); }}
-        style={{ ...styles.profileImageBox, cursor: 'pointer' }}
-        aria-label="View profile"
-      >
+      <div style={styles.profileImageBox}>
         PROFILE
       </div>
       
@@ -39,11 +31,11 @@ export default function ProfileMatchPage({ goBack, goNext }) {
 
       {/* CLASSES */}
       <div style={styles.formGroup}>
-        <label style={styles.label}>Classes Being Taken:</label>
+        <label style={styles.profileSectionLabel}>Classes Being Taken:</label>
         <div style={styles.infoBox}>
           <p style={styles.infoText}>Agile and Dev-Ops</p>
           <p style={styles.infoText}>Applied Internet Technologies</p>
-          <p style={styles.infoText}>Operating Systems</p>
+          <p style={{ ...styles.infoText, marginBottom: 0 }}>Operating Systems</p>
         </div>
       </div>
 
@@ -53,7 +45,7 @@ export default function ProfileMatchPage({ goBack, goNext }) {
         <div style={styles.infoBox}>
           <p style={styles.infoText}>Bobst Library</p>
           <p style={styles.infoText}>Warren Weaver Hall</p>
-          <p style={styles.infoText}>Washington Square Park</p>
+          <p style={{ ...styles.infoText, marginBottom: 0 }}>Washington Square Park</p>
         </div>
       </div>
 
@@ -62,7 +54,9 @@ export default function ProfileMatchPage({ goBack, goNext }) {
         <label style={styles.label}>Preferred Study Methods:</label>
         <div style={styles.infoBox}>
           <p style={styles.infoText}>Quiet Study</p>
-          <p style={styles.infoText}>Energetic Conversation and Constructive Feedback</p>
+          <p style={{ ...styles.infoText, marginBottom: 0 }}>
+            Energetic Conversation and Constructive Feedback
+          </p>
         </div>
       </div>
 
@@ -72,11 +66,11 @@ export default function ProfileMatchPage({ goBack, goNext }) {
       {/* MESSAGE BOX */}
       <div style={styles.formGroup}>
         <label style={styles.label}>Send A Message:</label>
-        <textarea style={styles.messageBox} />
+        <textarea style={styles.messageBox}></textarea>
       </div>
 
-      {/* SUBMIT BUTTON */}
-      <button style={styles.mainButton}>
+      {/* SEND BUTTON */}
+      <button style={styles.profileActionButton} onClick={goToDashboard}>
         SEND STUDY SYNC REQUEST
       </button>
     </div>
