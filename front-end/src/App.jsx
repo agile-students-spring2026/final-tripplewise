@@ -7,12 +7,18 @@ import UserDashboard from "./components/UserDashboard";
 import LoginPage from "./components/LoginPage";
 import StartUpPage from "./components/StartUpPage";
 import StudySyncMatches from "./components/StudySyncMatches";
-import Profile from "./components/Profile"; 
+import Profile from "./components/Profile";
+import EditSchedule from "./components/EditSchedule";
+import EditStudyLocations from "./components/EditStudyLocations";
+import EditStudyMethods from "./components/EditStudyMethods";
+import EditAccountDetails from "./components/EditAccountDetails";
 import { styles } from "./styles";
 
 export default function App() {
   const [page, setPage] = useState("start");
-    function openProfile(profile) {
+  const [selectedProfile, setSelectedProfile] = useState(null);
+
+  function openProfile(profile) {
     setSelectedProfile(profile);
     setPage("profilePage");
   }
@@ -58,12 +64,18 @@ export default function App() {
         <UserDashboard 
           onLogout={() => setPage("start")}
           onFindMatches={() => setPage("matches")}
+          onProfile={() => setPage("userProfile")}
         />
       )}
-      {page === "profilePage" && (
-        <Profile 
-          profile={selectedProfile}
-          goBack={() => setPage("matches")}
+
+      {page === "userProfile" && (
+        <Profile
+          goBack={() => setPage("dashboard")}
+          onEditSchedule={() => setPage("editSchedule")}
+          onEditLocations={() => setPage("editLocations")}
+          onEditMethods={() => setPage("editMethods")}
+          onEditAccount={() => setPage("editAccount")}
+          onLogout={() => setPage("start")}
         />
       )}
 
@@ -71,16 +83,20 @@ export default function App() {
         <StudySyncMatches onBack={() => setPage("dashboard")} />
       )}
 
+      {page === "editSchedule" && (
+        <EditSchedule goBack={() => setPage("userProfile")} />
+      )}
+
       {page === "editLocations" && (
-        <EditStudyLocations goBack={() => setPage("dashboard")} />
+        <EditStudyLocations goBack={() => setPage("userProfile")} />
       )}
 
       {page === "editMethods" && (
-        <EditStudyMethods goBack={() => setPage("dashboard")} />
+        <EditStudyMethods goBack={() => setPage("userProfile")} />
       )}
 
       {page === "editAccount" && (
-        <EditAccountDetails goBack={() => setPage("dashboard")} />
+        <EditAccountDetails goBack={() => setPage("userProfile")} />
       )}
 
     </div>

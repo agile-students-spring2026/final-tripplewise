@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { styles } from "../styles";
 
-export default function UserDashboard({ onLogout, onFindMatches }) {
+export default function UserDashboard({ onLogout, onFindMatches, onProfile }) {
   const [studySyncs] = useState([
     {
       id: 1,
@@ -94,6 +94,7 @@ export default function UserDashboard({ onLogout, onFindMatches }) {
           USER'S DASHBOARD
         </h1>
         <button
+          onClick={onProfile}
           style={{
             width: "48px",
             height: "48px",
