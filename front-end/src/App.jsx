@@ -14,13 +14,6 @@ export default function App() {
   return (
     <div style={styles.phoneScreen}>
 
-      {page === "login" && (
-        <LoginPage 
-          goBack={() => setPage("start")} 
-          onLogin={() => alert("add dashboard link here!")} 
-        />
-      )}
-
       {page === "start" && (
         <StartUpPage 
           onSignUp={() => setPage("signup1")} 
@@ -28,14 +21,24 @@ export default function App() {
         />
       )}
 
+      {page === "login" && (
+        <LoginPage 
+          goBack={() => setPage("start")} 
+          onLogin={() => alert("add dashboard link here!")} 
+        />
+      )}
+
       {page === "signup1" && (
-        <SignUpPageOne goNext={() => setPage("signup2")} />
+        <SignUpPageOne 
+          goNext={() => setPage("signup2")} 
+          goBack={() => setPage("start")}
+        />
       )}
 
       {page === "signup2" && (
         <SignUpPageTwo
           goBack={() => setPage("signup1")}
-          goNext={() => setPage("profile")}
+          goNext={() => setPage("login")}
         />
       )}
 
