@@ -6,6 +6,9 @@ import ProfileMatchPage from "./components/ProfileMatchPage";
 import UserDashboard from "./components/UserDashboard";
 import LoginPage from "./components/LoginPage";
 import StartUpPage from "./components/StartUpPage";
+import EditStudyLocations from "./components/EditStudyLocations";
+import EditStudyMethods from "./components/EditStudyMethods";
+import EditAccountDetails from "./components/EditAccountDetails";
 import { styles } from "./styles";
 
 export default function App() {
@@ -46,6 +49,19 @@ export default function App() {
       {page === "dashboard" && (
         <UserDashboard onLogout={() => setPage("start")} />
       )}
+
+      {page === "editLocations" && (
+        <EditStudyLocations goBack={() => setPage("dashboard")} />
+      )}
+
+      {page === "editMethods" && (
+        <EditStudyMethods goBack={() => setPage("dashboard")} />
+      )}
+
+      {page === "editAccount" && (
+        <EditAccountDetails goBack={() => setPage("dashboard")} />
+      )}
+
     </div>
   );
 }
