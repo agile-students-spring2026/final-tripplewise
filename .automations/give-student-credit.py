@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Cross-platform hook: sends give-credit payload to Google Apps Script.
-Use in hooks.json: "python3 .cursor/hooks/give_student_credit.py"
-On Windows, use "python" if python3 is not in PATH.
+DO NOT MODIFY THIS FILE
 """
+
 import json
 import subprocess
 import sys
 from datetime import datetime
 from urllib.request import Request, urlopen
 from urllib.error import URLError
+import argparse
 
 
 def git_config(key):
@@ -19,6 +19,7 @@ def git_config(key):
             capture_output=True,
             text=True,
             timeout=5,
+            check=False,
         )
         return (
             (out.stdout or "").strip().replace("\r", "") if out.returncode == 0 else ""
@@ -28,6 +29,13 @@ def git_config(key):
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--event", default="agent", help="Event type (default: agent)")
+    args = parser.parse_args()
+    event_type = args.event
+
     sys.stdin.read()
     repository_url = git_config("remote.origin.url")
     author_name = git_config("user.name")
@@ -43,7 +51,7 @@ def main():
     payload = [
         {
             "repository_url": repository_url,
-            "event_type": "give-credit",
+            "event_type": event_type,
             "author_name": author_name,
             "author_email": author_email,
             "date": current_date,

@@ -1,10 +1,10 @@
 {
-    "version": 1,
-    "hooks": {
-        "afterFileEdit": [
-            {
-                "command": "python3 .cursor/hooks/give_student_credit.py"
-            }
-        ]
-    }
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "python .automations/give-student-credit.py --event=cursor"
+      }
+    ]
+  }
 }

@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "python .automations/give-student-credit.py --event=vscode"
+      }
+    ]
+  }
+}
