@@ -7,9 +7,12 @@ import json
 import subprocess
 import sys
 from datetime import datetime
+from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 import argparse
+
+CONFIG_PATH = Path(__file__).resolve().parent / "config.json"
 
 
 def git_config(key):
@@ -29,7 +32,6 @@ def git_config(key):
 
 
 def main():
-    import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--event", default="agent", help="Event type (default: agent)")
@@ -57,7 +59,9 @@ def main():
             "date": current_date,
         }
     ]
-    url = "https://script.google.com/macros/s/AKfycbzDomyYQ1zsHy_eDOjyK7D48xpMUti2MCna3H4mvjkzZ42dnJTKQHUrRfoRtVFLd5Ia/exec"
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        config = json.load(f)
+    url = config["url"]
     body = json.dumps(payload).encode("utf-8")
     req = Request(
         url, data=body, method="POST", headers={"Content-Type": "application/json"}
