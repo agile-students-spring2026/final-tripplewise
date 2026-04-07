@@ -3,7 +3,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "python .automations/give-student-credit.py --event=vscode"
+        "command": "python3 .automations/give-student-credit.py --event=vscode || python .automations/give-student-credit.py --event=vscode"
       }
     ]
   }
