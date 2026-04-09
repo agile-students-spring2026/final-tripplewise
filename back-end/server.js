@@ -189,6 +189,120 @@ app.put("/api/users/me/methods", (req, res) => {
   res.json({ success: true, preferredMethods: methods });
 });
 
+// ===== STUDY SYNC SCHEDULING ROUTES =====
+
+// GET /api/syncs – retrieve all confirmed study syncs (for dashboard upcoming syncs tab)
+app.get("/api/syncs", (req, res) => {
+  res.json({
+    success: true,
+    data: studySyncs
+  });
+});
+
+// GET /api/requests – retrieve all pending meeting requests (for dashboard meeting requests tab)
+let meetingRequests = [
+  {
+    id: 1,
+    fromUser: "Sarah_Smith",
+    date: "1/1/2026",
+    time: "12:30 PM",
+    location: "Bobst LL2",
+    status: "pending"
+  },
+  {
+    id: 2,
+    fromUser: "Mike_Johnson",
+    date: "1/2/2026",
+    time: "2:00 PM",
+    location: "NYU Library",
+    status: "pending"
+  }
+];
+
+app.get("/api/requests", (req, res) => {
+  res.json({
+    success: true,
+    data: meetingRequests
+  });
+});
+
+// POST /api/requests – create a new meeting request (user sends request to another user)
+app.post("/api/requests", (req, res) => {
+  const { toUserId, date, time, location } = req.body;
+  
+  if (!toUserId || !date || !time || !location) {
+    return res.status(400).json({ error: "Missing required fields: toUserId, date, time, location" });
+  }
+  
+  const newRequest = {
+    id: Math.max(...meetingRequests.map(r => r.id), 0) + 1,
+    fromUser: "CurrentUser", // In real app, get from auth token
+    date: date,
+    time: time,
+    location: location,
+    status: "pending"
+  };
+  
+  meetingRequests.push(newRequest);
+  
+  res.status(201).json({
+    success: true,
+    message: "Meeting request sent",
+    data: newRequest
+  });
+});
+
+// POST /api/requests/:id/approve – approve a pending meeting request (moves to confirmed syncs)
+app.post("/api/requests/:id/approve", (req, res) => {
+  const requestId = parseInt(req.params.id);
+  const requestIndex = meetingRequests.findIndex(r => r.id === requestId);
+  
+  if (requestIndex === -1) {
+    return res.status(404).json({ error: "Request not found" });
+  }
+  
+  const request = meetingRequests[requestIndex];
+  
+  // Create a new confirmed study sync from the approved request
+  const newSync = {
+    id: Math.max(...studySyncs.map(s => s.id), 0) + 1,
+    title: `Study with ${request.fromUser}`,
+    datetime: `${request.date} ${request.time}`,
+    location: request.location,
+    message: "Confirmed study sync"
+  };
+  
+  studySyncs.push(newSync);
+  
+  // Remove request from pending
+  meetingRequests.splice(requestIndex, 1);
+  
+  res.json({
+    success: true,
+    message: "Meeting request approved and sync created",
+    data: newSync
+  });
+});
+
+// POST /api/requests/:id/reject – reject a pending meeting request (removes from requests)
+app.post("/api/requests/:id/reject", (req, res) => {
+  const requestId = parseInt(req.params.id);
+  const requestIndex = meetingRequests.findIndex(r => r.id === requestId);
+  
+  if (requestIndex === -1) {
+    return res.status(404).json({ error: "Request not found" });
+  }
+  
+  const rejectedRequest = meetingRequests[requestIndex];
+  meetingRequests.splice(requestIndex, 1);
+  
+  res.json({
+    success: true,
+    message: "Meeting request rejected",
+    data: rejectedRequest
+  });
+});
+
 app.use("/api/auth", authRoutes);
 
 app.listen(PORT, () => {
