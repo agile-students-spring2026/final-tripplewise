@@ -20,6 +20,7 @@ export default function App() {
   const [page, setPage] = useState("start");
   const [selectedMatchProfile, setSelectedMatchProfile] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [signupUsername, setSignupUsername] = useState("");
 
   function openMatchProfile(match) {
     setSelectedMatchProfile(match);
@@ -40,21 +41,30 @@ export default function App() {
         <LoginPage
           goBack={() => setPage("start")}
           onLogin={(user) => {
-            setCurrentUser(user);
+            const normalized =
+              typeof user === "string"
+                ? { id: Date.now(), username: user }
+                : user || { id: Date.now(), username: "user" };
+            console.log("App: normalized logged-in user:", normalized);
+            setCurrentUser(normalized);
             setPage("dashboard");
           }}
         />
       )}
 
       {page === "signup1" && (
-        <SignUpPageOne
-          goNext={() => setPage("signup2")}
+         <SignUpPageOne
+          goNext={(uname) => {
+            if (uname) setSignupUsername(uname);
+            setPage("signup2");
+          }}
           goBack={() => setPage("start")}
         />
       )}
 
       {page === "signup2" && (
         <SignUpPageTwo
+          initialUsername={signupUsername}
           goBack={() => setPage("signup1")}
           onComplete={(user) => {
             setCurrentUser(user);
@@ -75,18 +85,16 @@ export default function App() {
 
       {page === "userProfile" && (
         <Profile
-          profile={currentUser}
-          id={currentUser?.id}
+          user={currentUser}            
           goBack={() => setPage("dashboard")}
           onEditSchedule={() => setPage("editSchedule")}
           onEditLocations={() => setPage("editLocations")}
           onEditMethods={() => setPage("editMethods")}
           onEditAccount={() => setPage("editAccount")}
-          onLogout={() => setPage("start")}
+        onLogout={() => setPage("start")}
         />
       )}
 
-      {/* FIX: consistent casing — "syncmatch" matches what dashboard sets */}
       {page === "syncmatch" && (
         <ScheduleStudySync
           goBack={() => setPage("dashboard")}
