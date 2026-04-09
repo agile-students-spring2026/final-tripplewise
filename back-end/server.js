@@ -96,6 +96,33 @@ app.get("/api/test", (req, res) => {
   res.json({ message: "API working" });
 });
 
+app.get("/api/matches", (req, res) => {
+  // return lightweight match list
+  const matches = studySyncs.map((s) => ({
+    id: s.id,
+    username: s.title.split(" ")[0] || `user${s.id}`,
+    location: s.location,
+    method: "Mixed",
+    matchPercentage: Math.floor(Math.random() * 30) + 70, // mock %
+  }));
+  res.json(matches);
+});
+
+app.get("/api/matches/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const match = studySyncs.find((s) => s.id === id);
+  if (!match) return res.status(404).json({ error: "Match not found" });
+  // return full profile-like object for the match page
+  res.json({
+    id: match.id,
+    username: match.title,
+    location: match.location,
+    method: "In-Person",
+    bio: match.message || "",
+    matchPercentage: Math.floor(Math.random() * 30) + 70,
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
