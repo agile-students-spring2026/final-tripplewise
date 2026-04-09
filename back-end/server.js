@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 const PORT = 3001;
@@ -91,7 +92,6 @@ app.get("/api/profile/:id", (req, res) => {
   res.json(p);
 });
 
-// placeholder route structure (for teammates)
 app.get("/api/test", (req, res) => {
   res.json({ message: "API working" });
 });
