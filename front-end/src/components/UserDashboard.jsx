@@ -1,75 +1,71 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { styles } from "../styles";
 
 export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOrganizeSyncs }) {
-  const [studySyncs] = useState([
-    {
-      id: 1,
-      date: "1/1/2026",
-      time: "12:30 PM",
-      location: "Bobst LL2",
-      participants: ["John"],
-    },
-    {
-      id: 2,
-      date: "1/2/2026",
-      time: "12:30 PM",
-      location: "Bobst LL2",
-      participants: ["James"],
-    },
-    {
-      id: 3,
-      date: "1/3/2026",
-      time: "12:30 PM",
-      location: "Bobst LL2",
-      participants: ["Jack"],
-    },
-  ]);
-
-  const [meetingRequests, setMeetingRequests] = useState([
-    {
-      id: 1,
-      date: "1/1/2026",
-      time: "12:30 PM",
-      location: "Bobst LL2",
-      participants: ["John"],
-    },
-    {
-      id: 2,
-      date: "1/2/2026",
-      time: "12:30 PM",
-      location: "Bobst LL2",
-      participants: ["James"],
-    },
-    {
-      id: 3,
-      date: "1/3/2026",
-      time: "12:30 PM",
-      location: "Bobst LL2",
-      participants: ["Jack"],
-    },
-  ]);
-
+  const [studySyncs, setStudySyncs] = useState([]);
+  const [meetingRequests, setMeetingRequests] = useState([]);
   const [selectedTab, setSelectedTab] = useState("syncs");
+
+  const fetchData = useCallback(async () => {
+    try {
+      // Fetch confirmed study syncs
+      const syncsRes = await fetch("http://localhost:3001/api/syncs");
+      const syncsData = await syncsRes.json();
+      setStudySyncs(syncsData.data || []);
+      
+      // Fetch pending meeting requests
+      const requestsRes = await fetch("http://localhost:3001/api/requests");
+      const requestsData = await requestsRes.json();
+      setMeetingRequests(requestsData.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  // Fetch syncs and requests on component mount
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleFindMatches = () => {
     onFindMatches();
   };
 
-  const handleOrganizeStudy = () => {
-    onOrganizeSyncs();
-  }
-
-  const handleApproveMeeting = (id) => {
-    setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+  const handleApproveMeeting = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/requests/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (response.ok) {
+        // Remove from meeting requests and refresh both lists
+        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+        fetchData(); // Refresh syncs list
+      }
+    } catch (err) {
+      console.error("Error approving meeting:", err);
+    }
   };
 
-  const handleRejectMeeting = (id) => {
-    setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+  const handleRejectMeeting = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/requests/${id}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (response.ok) {
+        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+      }
+    } catch (err) {
+      console.error("Error rejecting meeting:", err);
+    }
   };
 
   const formatSyncEntry = (sync) => {
-    return `${sync.date} ${sync.time} @ ${sync.location} W/ ${sync.participants.join(", ")}`;
+    // Backend returns: { id, title, datetime, location, message }
+    return `${sync.datetime} @ ${sync.location} - ${sync.title}`;
   };
 
   return (
@@ -274,7 +270,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
                         lineHeight: "1.6",
                       }}
                     >
-                      {formatSyncEntry(request)}
+                      {`${request.date} ${request.time} @ ${request.location} - From ${request.fromUser}`}
                     </div>
                     <div
                       style={{
