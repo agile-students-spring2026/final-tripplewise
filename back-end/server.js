@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 const PORT = 3001;
@@ -18,10 +19,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// placeholder route structure (for teammates)
 app.get("/api/test", (req, res) => {
   res.json({ message: "API working" });
 });
+
+app.use("/api/auth", authRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
