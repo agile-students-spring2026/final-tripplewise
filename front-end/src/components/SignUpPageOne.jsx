@@ -28,7 +28,7 @@ export default function SignUpPageOne({ goNext, goBack }) {
       }
 
       console.log("Signup success:", data);
-      goNext();
+      goNext?.(username);
     } catch (err) {
       setError("Could not connect to backend");
     }

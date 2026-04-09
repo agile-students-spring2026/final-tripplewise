@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SignUpPageTwo from "./SignUpPageTwo";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 // This is the profile page
@@ -10,23 +11,36 @@ export default function ProfilePage({
   onEditAccount,
   onLogout,
   user: propUser,
+  profile: propProfile, 
 }) {
-  const [user, setUser] = useState(propUser || { name: "Student", email: "" });
-  useEffect(() => {
-    if (!propUser) {
-      try {
-        const stored = localStorage.getItem("user");
-        if (stored) setUser(JSON.parse(stored));
-      } catch (e) {
-      }
-    }
-  }, [propUser]);
+  const incoming = propUser || propProfile || {};
+  const [user, setUser] = useState({
+    username: incoming.username || incoming.name || "Student",
+    email: incoming.email || "",
+    classes: incoming.classes || [],
+    locations: incoming.locations || [],
+    methods: incoming.methods || [],
+  });
+
+useEffect(() => {
+  const src = propUser || propProfile || null;
+  if (src) {
+    setUser({
+      username: src.username || src.name || "Student",
+      email: src.email || "",
+      classes: src.classes || [],
+      locations: src.locations || [],
+      methods: src.methods || [],
+    });
+  }
+}, [propUser, propProfile]);
+
   const handle = (cb, fallbackMsg) => {
     if (typeof cb === "function") cb();
     else alert(fallbackMsg);
   };
 
-  const initials = (user.name || "U")
+  const initials = (user.username || "U")
     .split(" ")
     .map((s) => s[0])
     .slice(0, 2)
@@ -39,7 +53,7 @@ export default function ProfilePage({
         <BackButton onClick={goBack} />
       </div>
 
-      <div style={{ maxWidth: 720, margin: "24px auto", padding: 20 }}>
+       <div style={{ maxWidth: 720, margin: "24px auto", padding: 20 }}>
         <div
           style={{
             display: "flex",
@@ -67,7 +81,7 @@ export default function ProfilePage({
           </div>
 
           <div>
-            <div style={{ fontSize: 20, fontWeight: 600 }}>{user.name}</div>
+            <div style={{ fontSize: 20, fontWeight: 600 }}>{user.username}</div>
             <div style={{ color: "#666", marginTop: 4 }}>{user.email}</div>
           </div>
         </div>

@@ -332,25 +332,6 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
           </div>
         )}
       </div>
-
-      {/* Logout Button */}
-      <button
-        onClick={onLogout}
-        style={{
-          width: "100%",
-          backgroundColor: "black",
-          color: "white",
-          border: "none",
-          padding: "12px",
-          fontSize: "12px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          marginTop: "20px",
-          letterSpacing: "0.05em",
-        }}
-      >
-        LOGOUT
-      </button>
     </div>
   );
 }

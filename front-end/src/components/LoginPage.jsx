@@ -10,7 +10,6 @@ export default function LoginPage({ goBack, onLogin }) {
   async function handleLogin() {
     setError("");
 
-    // connects to server to send username and password
     try {
       const response = await fetch("http://localhost:3001/api/auth/login", {
         method: "POST",
@@ -27,8 +26,10 @@ export default function LoginPage({ goBack, onLogin }) {
         return;
       }
 
-      console.log("Login success:", data);
-      onLogin();
+      // normalize the user object and call onLogin once
+      const userObj = { id: data.id || Date.now(), username: data.username || username };
+      console.log("Login success:", userObj);
+      onLogin(userObj);
     } catch (err) {
       setError("Could not connect to backend");
     }
