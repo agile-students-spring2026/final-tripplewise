@@ -63,11 +63,6 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
     }
   };
 
-  const formatSyncEntry = (sync) => {
-    // Backend returns: { id, title, datetime, location, message }
-    return `${sync.datetime} @ ${sync.location} - ${sync.title}`;
-  };
-
   return (
     <div style={styles.page}>
       {/* Header with Profile Button */}
@@ -223,7 +218,26 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
                       lineHeight: "1.6",
                     }}
                   >
-                    {formatSyncEntry(sync)}
+                    <div style={{ marginBottom: "6px", fontWeight: "bold" }}>
+                      {sync.title}
+                    </div>
+                    <div style={{ color: "#666", marginBottom: "4px" }}>
+                      {`${sync.datetime} @ ${sync.location}`}
+                    </div>
+                    <div style={{ color: "#888", fontSize: "11px" }}>
+                      {`Members: ${sync.members ? sync.members.join(", ") : "N/A"}`}
+                      {sync.maxMembers && ` (${sync.members?.length || 0}/${sync.maxMembers})`}
+                    </div>
+                    {sync.status && (
+                      <div style={{ 
+                        color: sync.status === "completed" ? "#888" : "#4CAF50",
+                        fontSize: "10px",
+                        marginTop: "4px",
+                        textTransform: "uppercase"
+                      }}>
+                        Status: {sync.status}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
