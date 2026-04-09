@@ -139,7 +139,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
           MATCHES
         </button>
         <button
-          onClick={handleOrganizeStudy}
+          onClick={onOrganizeSyncs}
           style={{
             flex: 1,
             backgroundColor: "black",

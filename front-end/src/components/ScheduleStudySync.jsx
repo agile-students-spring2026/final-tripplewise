@@ -1,20 +1,22 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function ScheduleStudySync({ goBack }) {
   const sampleMeetings = [
     {
       id: 1,
       title: "OS Study Group",
-      datetime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // tomorrow
+      datetime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
       location: "Bobst Library",
       message: "Let's focus on chapter 4.",
     },
     {
       id: 2,
       title: "Algorithms Review",
-      datetime: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+      datetime: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
       location: "Campus Cafe",
       message: "Recap sorting algorithms.",
     },
@@ -25,6 +27,7 @@ export default function ScheduleStudySync({ goBack }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [customLocation, setCustomLocation] = useState(""); // FIX: separate state for "Other"
   const [message, setMessage] = useState("");
   const [locations] = useState([
     "Bobst Library",
@@ -34,30 +37,50 @@ export default function ScheduleStudySync({ goBack }) {
     "Virtual (Zoom)",
   ]);
 
-  const now = new Date();
+  // FIX: useEffect is now imported and used correctly
+  useEffect(() => {
+    fetch(`${API_BASE}/api/syncs`)
+      .then((r) => {
+        if (!r.ok) throw new Error("network");
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setMeetings(data);
+      })
+      .catch((err) => {
+        console.warn("Could not load syncs from backend:", err.message);
+      });
+  }, []);
 
+  // FIX: `now` is inside each useMemo so it doesn't bust memoization on every render
   const upcoming = useMemo(() => {
+    const now = new Date();
     return meetings
       .filter((m) => new Date(m.datetime) >= now)
       .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-  }, [meetings, now]);
+  }, [meetings]);
 
   const past = useMemo(() => {
+    const now = new Date();
     return meetings
       .filter((m) => new Date(m.datetime) < now)
       .sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
-  }, [meetings, now]);
+  }, [meetings]);
 
   function resetForm() {
     setTitle("");
     setDate("");
     setTime("");
     setLocation("");
+    setCustomLocation("");
     setMessage("");
   }
 
   function handleSendRequest() {
-    if (!title.trim() || !date || !time || !location) {
+    // FIX: use customLocation value when "Other" is selected
+    const resolvedLocation = location === "Other" ? customLocation.trim() : location;
+
+    if (!title.trim() || !date || !time || !resolvedLocation) {
       alert("Please fill title, date, time and location.");
       return;
     }
@@ -66,15 +89,32 @@ export default function ScheduleStudySync({ goBack }) {
       alert("Invalid date/time.");
       return;
     }
-    const newMeeting = {
-      id: Date.now(),
+    const payload = {
       title: title.trim(),
       datetime: dt.toISOString(),
-      location,
+      location: resolvedLocation,
       message: message.trim(),
     };
-    setMeetings((s) => [newMeeting, ...s]);
-    resetForm();
+
+    fetch(`${API_BASE}/api/syncs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("network");
+        return r.json();
+      })
+      .then((created) => {
+        setMeetings((s) => [created, ...s]);
+        resetForm();
+      })
+      .catch((err) => {
+        console.warn("Failed to POST to backend, adding locally:", err.message);
+        const local = { id: Date.now(), ...payload };
+        setMeetings((s) => [local, ...s]);
+        resetForm();
+      });
   }
 
   function formatDateTime(iso) {
@@ -110,17 +150,34 @@ export default function ScheduleStudySync({ goBack }) {
         <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
             <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: "90%", padding: 8 }} />
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={{ width: "90%", padding: 8 }}
+            />
           </div>
           <div style={{ width: 140 }}>
             <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Time</label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: "90%", padding: 8 }} />
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              style={{ width: "90%", padding: 8 }}
+            />
           </div>
         </div>
 
         <div style={{ marginBottom: 10 }}>
           <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Location</label>
-          <select value={location} onChange={(e) => setLocation(e.target.value)} style={{ width: "100%", padding: 8 }}>
+          <select
+            value={location}
+            onChange={(e) => {
+              setLocation(e.target.value);
+              setCustomLocation(""); // reset custom when dropdown changes
+            }}
+            style={{ width: "100%", padding: 8 }}
+          >
             <option value="">Select a location</option>
             {locations.map((l) => (
               <option key={l} value={l}>
@@ -129,31 +186,53 @@ export default function ScheduleStudySync({ goBack }) {
             ))}
             <option value="Other">Other (enter below)</option>
           </select>
+
+          {/* FIX: customLocation has its own state — no longer resets itself */}
           {location === "Other" && (
             <input
               placeholder="Enter location"
-              value={location === "Other" ? "" : location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={customLocation}
+              onChange={(e) => setCustomLocation(e.target.value)}
               style={{ width: "100%", padding: 8, marginTop: 8 }}
             />
           )}
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Message (optional)</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} style={{ width: "90%", padding: 8, minHeight: 72 }} />
+          <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>
+            Message (optional)
+          </label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            style={{ width: "90%", padding: 8, minHeight: 72 }}
+          />
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={handleSendRequest}
-            style={{ flex: 1, background: "black", color: "white", padding: "10px 12px", border: "none", cursor: "pointer", fontWeight: "bold" }}
+            style={{
+              flex: 1,
+              background: "black",
+              color: "white",
+              padding: "10px 12px",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
           >
             SEND STUDY SYNC REQUEST
           </button>
           <button
             onClick={resetForm}
-            style={{ background: "#f1f1f1", padding: "10px 12px", border: "2px solid #4d4747", cursor: "pointer", color: "#555" }}
+            style={{
+              background: "#f1f1f1",
+              padding: "10px 12px",
+              border: "2px solid #4d4747",
+              cursor: "pointer",
+              color: "#555",
+            }}
           >
             RESET
           </button>
@@ -163,18 +242,43 @@ export default function ScheduleStudySync({ goBack }) {
       <div style={{ marginBottom: 18 }}>
         <h3 style={{ margin: "6px 0 10px 0" }}>Upcoming Study Syncs</h3>
         {upcoming.length === 0 ? (
-          <div style={{ padding: 12, border: "1px solid #ddd", background: "white", color: "#666" }}>No upcoming study syncs.</div>
+          <div style={{ padding: 12, border: "1px solid #ddd", background: "white", color: "#666" }}>
+            No upcoming study syncs.
+          </div>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {upcoming.map((m) => (
-              <div key={m.id} style={{ padding: 12, border: "1px solid #ddd", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div
+                key={m.id}
+                style={{
+                  padding: 12,
+                  border: "1px solid #ddd",
+                  background: "white",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <div>
                   <div style={{ fontWeight: 700 }}>{m.title}</div>
-                  <div style={{ fontSize: 13, color: "#666" }}>{formatDateTime(m.datetime)} · {m.location}</div>
+                  <div style={{ fontSize: 13, color: "#666" }}>
+                    {formatDateTime(m.datetime)} · {m.location}
+                  </div>
                   {m.message && <div style={{ marginTop: 6, fontSize: 13 }}>{m.message}</div>}
                 </div>
                 <div style={{ marginLeft: 12 }}>
-                  <button style={{ padding: "8px 10px", border: "none", background: "#2d9cdb", color: "white", cursor: "pointer", borderRadius: 6 }}>VIEW</button>
+                  <button
+                    style={{
+                      padding: "8px 10px",
+                      border: "none",
+                      background: "#2d9cdb",
+                      color: "white",
+                      cursor: "pointer",
+                      borderRadius: 6,
+                    }}
+                  >
+                    VIEW
+                  </button>
                 </div>
               </div>
             ))}
@@ -185,13 +289,20 @@ export default function ScheduleStudySync({ goBack }) {
       <div>
         <h3 style={{ margin: "6px 0 10px 0" }}>Past Study Syncs</h3>
         {past.length === 0 ? (
-          <div style={{ padding: 12, border: "1px solid #ddd", background: "white", color: "#666" }}>No past study syncs.</div>
+          <div style={{ padding: 12, border: "1px solid #ddd", background: "white", color: "#666" }}>
+            No past study syncs.
+          </div>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {past.map((m) => (
-              <div key={m.id} style={{ padding: 12, border: "1px solid #eee", background: "white" }}>
+              <div
+                key={m.id}
+                style={{ padding: 12, border: "1px solid #eee", background: "white" }}
+              >
                 <div style={{ fontWeight: 700 }}>{m.title}</div>
-                <div style={{ fontSize: 13, color: "#666" }}>{formatDateTime(m.datetime)} · {m.location}</div>
+                <div style={{ fontSize: 13, color: "#666" }}>
+                  {formatDateTime(m.datetime)} · {m.location}
+                </div>
                 {m.message && <div style={{ marginTop: 6, fontSize: 13 }}>{m.message}</div>}
               </div>
             ))}
