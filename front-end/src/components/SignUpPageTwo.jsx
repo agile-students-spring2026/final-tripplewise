@@ -2,18 +2,22 @@ import BackButton from "./BackButton";
 import { styles } from "../styles";
 
 export default function SignUpPageTwo({ goBack, goNext }) {
+  function finishSignup() {
+    const newUser = {
+      id: Date.now(),
+      username: username || "new_user",
+      bio: bio || "",
+      classes: classes || [],
+      locations: locations || [],
+      methods: methods || [],
+    };
+    if (typeof onComplete === "function") onComplete(newUser);
+  }
+
   return (
-    
-    <div style={styles.page}>
-
-      {/* 
-          STYLING EXPLANATIONS:
-          - formGroup stacks the the label and the input box vertically.
-          - doubleInputRow helps place two form groups side-by-side.
-          - halfInputGroup helps make the "Time" and "Class" equal width.
-
-          Please reuse these stylings for the other pages as well so that there is consistency on the appearance of our application.
-      */}
+      <div style={styles.page}>
+        {/* ...signup form ... */}
+        <button onClick={finishSignup}>COMPLETE SIGN UP</button>
     
       <div style={styles.topRow}>
         <BackButton onClick={goBack} />
@@ -102,5 +106,6 @@ export default function SignUpPageTwo({ goBack, goNext }) {
         FINISH CREATING ACCOUNT
       </button>
     </div>
+    
   );
 }
