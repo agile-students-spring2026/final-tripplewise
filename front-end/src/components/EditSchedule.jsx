@@ -1,50 +1,47 @@
 import React, { useState, useEffect } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
-// This is the second page of the sign-up process.
-export default function SignUpPageTwo({ goBack, goNext, onSave }) {
-  const [classes, setClasses] = useState([
-    { id: Date.now(), name: "", time: "09:00" },
-  ]);
 
+// Edit Schedule – loads from GET /api/users/me and saves via PUT /api/users/me/schedule
+export default function EditSchedule({ goBack }) {
+  const [classes, setClasses] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState(null); // "saved" | "error"
+
+  // Load the user's current schedule on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("schedule");
-      if (saved) setClasses(JSON.parse(saved));
-    } catch (e) {
-      // ignore
-    }
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.schedule) && data.schedule.length) {
+          setClasses(data.schedule);
+        } else {
+          setClasses([{ id: Date.now(), name: "", time: "09:00" }]);
+        }
+      })
+      .catch(() => {
+        setClasses([{ id: Date.now(), name: "", time: "09:00" }]);
+      });
   }, []);
-  // Add a new class to the schedule
-  function addClass() {
-    setClasses((prev) => [
-      ...prev,
-      { id: Date.now() + Math.random(), name: "", time: "09:00" },
-    ]);
-  }
-  // Update an existing class in the schedule
-  function updateClass(idx, field, value) {
-    setClasses((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
-      return next;
-    });
-  }
-
-  function removeClass(idx) {
-    setClasses((prev) => prev.filter((_, i) => i !== idx));
-  }
 
   function saveChanges() {
-    try {
-      localStorage.setItem("schedule", JSON.stringify(classes));
-    } catch (e) {
-      // ignore
-    }
-    if (typeof onSave === "function") onSave(classes);
-    // optional: move to next step if provided
-    if (typeof goNext === "function") goNext();
-    else alert("Schedule saved");
+    setSaving(true);
+    setStatus(null);
+    fetch("/api/users/me/schedule", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(classes),
+    })
+      .then((r) => r.json())
+      .then(() => {
+        setSaving(false);
+        setStatus("saved");
+        setTimeout(() => goBack(), 800);
+      })
+      .catch(() => {
+        setSaving(false);
+        setStatus("error");
+      });
   }
 
   return (
@@ -54,6 +51,17 @@ export default function SignUpPageTwo({ goBack, goNext, onSave }) {
       </div>
 
       <h2 style={{ marginTop: 20, color: "#555" }}>Edit Schedule</h2>
+
+      {status === "saved" && (
+        <div style={{ background: "#e8f5e9", color: "#2e7d32", padding: "10px", borderRadius: 6, marginBottom: 12, textAlign: "center" }}>
+          Schedule saved!
+        </div>
+      )}
+      {status === "error" && (
+        <div style={{ background: "#ffebee", color: "#c62828", padding: "10px", borderRadius: 6, marginBottom: 12, textAlign: "center" }}>
+          Failed to save. Please try again.
+        </div>
+      )}
 
       <div style={{ width: "100%", maxWidth: 700 }}>
         {classes.map((c, idx) => (
@@ -70,26 +78,35 @@ export default function SignUpPageTwo({ goBack, goNext, onSave }) {
               type="text"
               placeholder={`Class name #${idx + 1}`}
               value={c.name}
-              onChange={(e) => updateClass(idx, "name", e.target.value)}
+              onChange={(e) => {
+                const next = [...classes];
+                next[idx] = { ...next[idx], name: e.target.value };
+                setClasses(next);
+              }}
               style={{ flex: 2, padding: 8 }}
             />
 
             <input
               type="time"
               value={c.time}
-              onChange={(e) => updateClass(idx, "time", e.target.value)}
+              onChange={(e) => {
+                const next = [...classes];
+                next[idx] = { ...next[idx], time: e.target.value };
+                setClasses(next);
+              }}
               style={{ flex: 1, padding: 8 }}
             />
 
             <button
               type="button"
-              onClick={() => removeClass(idx)}
+              onClick={() => setClasses((prev) => prev.filter((_, i) => i !== idx))}
               style={{
                 padding: "8px 12px",
                 background: "#e74c3c",
                 color: "white",
                 border: "none",
                 cursor: "pointer",
+                borderRadius: 4,
               }}
             >
               Remove
@@ -100,13 +117,19 @@ export default function SignUpPageTwo({ goBack, goNext, onSave }) {
         <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
           <button
             type="button"
-            onClick={addClass}
+            onClick={() =>
+              setClasses((prev) => [
+                ...prev,
+                { id: Date.now() + Math.random(), name: "", time: "09:00" },
+              ])
+            }
             style={{
               padding: "8px 12px",
               background: "#2ecc71",
               color: "white",
               border: "none",
               cursor: "pointer",
+              borderRadius: 4,
             }}
           >
             Add Class
@@ -115,15 +138,17 @@ export default function SignUpPageTwo({ goBack, goNext, onSave }) {
           <button
             type="button"
             onClick={saveChanges}
+            disabled={saving}
             style={{
               padding: "8px 12px",
-              background: "#3498db",
+              background: saving ? "#aaa" : "#3498db",
               color: "white",
               border: "none",
-              cursor: "pointer",
+              cursor: saving ? "not-allowed" : "pointer",
+              borderRadius: 4,
             }}
           >
-            Save Changes
+            {saving ? "Saving…" : "Save Changes"}
           </button>
         </div>
       </div>
