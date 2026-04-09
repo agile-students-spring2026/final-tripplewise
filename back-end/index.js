@@ -47,7 +47,32 @@ let studySyncs = [
     message: "Recap sorting algorithms.",
   },
 ];
-
+const matches = [
+  {
+    id: 101,
+    username: "John_Doe",
+    location: "Bobst LL2",
+    method: "In-Person",
+    matchPercentage: 92,
+    bio: "CS student who likes OS",
+  },
+  {
+    id: 102,
+    username: "Sarah_Smith",
+    location: "NYU Library",
+    method: "Virtual",
+    matchPercentage: 87,
+    bio: "Math major interested in study groups",
+  },
+  {
+    id: 103,
+    username: "Emma_Wilson",
+    location: "Bobst LL2",
+    method: "Hybrid",
+    matchPercentage: 85,
+    bio: "Grad student, evenings only",
+  },
+];
 // Health
 app.get("/health", (req, res) => res.json({ ok: true }));
 
@@ -96,5 +121,22 @@ const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => console.log(`API server listening on http://localhost:${PORT}`));
 }
+// GET all matches
+app.get("/api/matches", (req, res) => {
+  // optional: allow simple filtering via query (e.g. ?location=Bobst)
+  const { location, method } = req.query;
+  let out = matches;
+  if (location) out = out.filter((m) => m.location === location);
+  if (method) out = out.filter((m) => m.method === method);
+  res.json(out);
+});
+
+// GET match by id
+app.get("/api/matches/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const m = matches.find((x) => x.id === id);
+  if (!m) return res.status(404).json({ error: "Match not found" });
+  res.json(m);
+});
 
 export default app;

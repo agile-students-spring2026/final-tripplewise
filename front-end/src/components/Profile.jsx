@@ -1,32 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { styles } from "../styles";
 import BackButton from "./BackButton";
-
-export default function Profile({ profile: propProfile, id: propId, goBack }) {
-  const profileId = propProfile?.id ?? propId ?? null;
-  const [profile, setProfile] = useState(propProfile || null);
-
+import { styles } from "../styles";
+// This is the profile page
+export default function ProfilePage({
+  goBack,
+  onEditSchedule,
+  onEditLocations,
+  onEditMethods,
+  onEditAccount,
+  onLogout,
+  user: propUser,
+}) {
+  const [user, setUser] = useState(propUser || { name: "Student", email: "" });
   useEffect(() => {
-    // if parent passed profile directly (e.g. from signup), don't fetch
-    if (propProfile) return;
-    if (!profile && profileId) {
-      fetch(`/api/profile/${profileId}`)
-        .then((r) => r.json())
-        .then((data) => setProfile(data))
-        .catch(() => {});
+    if (!propUser) {
+      try {
+        const stored = localStorage.getItem("user");
+        if (stored) setUser(JSON.parse(stored));
+      } catch (e) {
+      }
     }
-  }, [profileId, profile, propProfile]);
+  }, [propUser]);
+  const handle = (cb, fallbackMsg) => {
+    if (typeof cb === "function") cb();
+    else alert(fallbackMsg);
+  };
 
-  if (!profile) {
-    return (
-      <div style={styles.page}>
-        <div style={styles.topRow}>
-          <BackButton onClick={goBack} />
-        </div>
-        <div>{profileId ? "Loading..." : "No profile selected."}</div>
-      </div>
-    );
-  }
+  const initials = (user.name || "U")
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <div style={styles.page}>
@@ -34,35 +39,118 @@ export default function Profile({ profile: propProfile, id: propId, goBack }) {
         <BackButton onClick={goBack} />
       </div>
 
-      <div style={styles.profileImageBox}>PROFILE</div>
+      <div style={{ maxWidth: 720, margin: "24px auto", padding: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            marginBottom: 20,
+          }}
+        >
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              background: "black",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: 28,
+              fontWeight: 600,
+              borderRadius: "8px"
+            }}
+          >
+            {initials}
+          </div>
 
-      {/* FIX: username displays correctly as long as currentUser has a username field */}
-      <div style={styles.usernameBox}>{profile.username}</div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.profileSectionLabel}>Classes Being Taken:</label>
-        <div style={styles.infoBox}>
-          {profile.classes?.map((c, i) => (
-            <p key={i} style={styles.infoText}>{c}</p>
-          ))}
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 600 }}>{user.name}</div>
+            <div style={{ color: "#666", marginTop: 4 }}>{user.email}</div>
+          </div>
         </div>
-      </div>
 
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Preferred Locations:</label>
-        <div style={styles.infoBox}>
-          {profile.locations?.map((l, i) => (
-            <p key={i} style={styles.infoText}>{l}</p>
-          ))}
-        </div>
-      </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => handle(onEditSchedule, "Edit Schedule")}
+            style={{
+              padding: "12px 16px",
+              background: "grey",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Edit Schedule
+          </button>
 
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Preferred Study Methods:</label>
-        <div style={styles.infoBox}>
-          {profile.methods?.map((m, i) => (
-            <p key={i} style={styles.infoText}>{m}</p>
-          ))}
+          <button
+            type="button"
+            onClick={() =>
+              handle(onEditLocations, "Edit preferred study locations")
+            }
+            style={{
+              padding: "12px 16px",
+              background: "grey",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Edit Preferred Study Locations
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              handle(onEditMethods, "Edit preferred study methods")
+            }
+            style={{
+              padding: "12px 16px",
+              background: "grey",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Edit Preferred Study Methods
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handle(onEditAccount, "Edit account details")}
+            style={{
+              padding: "12px 16px",
+              background: "grey",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Edit Account Details
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handle(onLogout, "Logout")}
+            style={{
+              padding: "12px 16px",
+              background: "grey",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>
