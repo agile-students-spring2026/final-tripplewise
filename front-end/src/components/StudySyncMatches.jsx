@@ -3,6 +3,8 @@ import { useState, useMemo } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
 export default function StudySyncMatches({ onBack, onViewProfile }) {
   const [matches] = useState([
     {
@@ -37,6 +39,28 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
 
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("match");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/api/matches`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setMatches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        // fallback: minimal mock list so UI still works
+        if (!cancelled) {
+          setMatches([
+            { id: 1, username: "John_Doe", location: "Bobst LL2", method: "In-Person", matchPercentage: 92 },
+            { id: 2, username: "Sarah_Smith", location: "NYU Library", method: "Virtual", matchPercentage: 87 },
+          ]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => (cancelled = true);
+  }, []);
 
   // Filter logic
   const filteredMatches = useMemo(() => {

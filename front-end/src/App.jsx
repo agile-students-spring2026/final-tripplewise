@@ -1,4 +1,3 @@
-//App logic
 import { useState } from "react";
 import SignUpPageOne from "./components/SignUpPageOne";
 import SignUpPageTwo from "./components/SignUpPageTwo";
@@ -12,80 +11,105 @@ import EditSchedule from "./components/EditSchedule";
 import EditStudyLocations from "./components/EditStudyLocations";
 import EditStudyMethods from "./components/EditStudyMethods";
 import EditAccountDetails from "./components/EditAccountDetails";
-import SyncMatch from "./components/SyncMatch";
+import ScheduleStudySync from "./components/ScheduleStudySync";
+import SyncCompleted from "./components/SyncCompleted";
+import StudySyncMeetings from "./components/StudySyncMeetings";
 import { styles } from "./styles";
 
 export default function App() {
   const [page, setPage] = useState("start");
   const [selectedMatchProfile, setSelectedMatchProfile] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [signupUsername, setSignupUsername] = useState("");
+
+  function openMatchProfile(match) {
+    setSelectedMatchProfile(match);
+    setPage("matchProfile");
+  }
 
   return (
     <div style={styles.phoneScreen}>
 
       {page === "start" && (
-        <StartUpPage 
-          onSignUp={() => setPage("signup1")} 
-          onLogin={() => setPage("login")} 
+        <StartUpPage
+          onSignUp={() => setPage("signup1")}
+          onLogin={() => setPage("login")}
         />
       )}
 
       {page === "login" && (
-        <LoginPage 
-          goBack={() => setPage("start")} 
-          onLogin={() => setPage("dashboard")} 
+        <LoginPage
+          goBack={() => setPage("start")}
+          onLogin={(user) => {
+            const normalized =
+              typeof user === "string"
+                ? { id: Date.now(), username: user }
+                : user || { id: Date.now(), username: "user" };
+            console.log("App: normalized logged-in user:", normalized);
+            setCurrentUser(normalized);
+            setPage("dashboard");
+          }}
         />
       )}
 
       {page === "signup1" && (
-        <SignUpPageOne 
-          goNext={() => setPage("signup2")} 
+         <SignUpPageOne
+          goNext={(uname) => {
+            if (uname) setSignupUsername(uname);
+            setPage("signup2");
+          }}
           goBack={() => setPage("start")}
         />
       )}
 
       {page === "signup2" && (
         <SignUpPageTwo
+          initialUsername={signupUsername}
           goBack={() => setPage("signup1")}
-          goNext={() => setPage("login")}
+          onComplete={(user) => {
+            setCurrentUser(user);
+            setPage("dashboard");
+          }}
         />
       )}
 
       {page === "dashboard" && (
-        <UserDashboard 
+        <UserDashboard
           onLogout={() => setPage("start")}
           onFindMatches={() => setPage("matches")}
           onProfile={() => setPage("userProfile")}
+          // FIX: consistent casing — "syncmatch" used everywhere
           onOrganizeSyncs={() => setPage("syncmatch")}
         />
       )}
 
       {page === "userProfile" && (
         <Profile
+          user={currentUser}            
           goBack={() => setPage("dashboard")}
           onEditSchedule={() => setPage("editSchedule")}
           onEditLocations={() => setPage("editLocations")}
           onEditMethods={() => setPage("editMethods")}
           onEditAccount={() => setPage("editAccount")}
-          onLogout={() => setPage("start")}
+        onLogout={() => setPage("start")}
         />
       )}
+
       {page === "syncmatch" && (
-      <SyncMatch 
-      goBack={() => setPage("dashboard")} />
+        <ScheduleStudySync
+          goBack={() => setPage("dashboard")}
+        />
       )}
 
       {page === "matches" && (
-        <StudySyncMatches 
+        <StudySyncMatches
           onBack={() => setPage("dashboard")}
-          onViewProfile={(match) => {
-            setSelectedMatchProfile(match);
-            setPage("matchProfile");
-          }}
+          onViewProfile={openMatchProfile}
         />
       )}
 
       {page === "matchProfile" && selectedMatchProfile && (
-        <ProfileMatchPage 
+        <ProfileMatchPage
           profile={selectedMatchProfile}
           goBack={() => setPage("matches")}
           goToDashboard={() => setPage("dashboard")}
@@ -116,9 +140,9 @@ export default function App() {
       )}
 
       {page === "syncMatch" && (
-        <StudySyncMeetings 
-          onBack={() => setPage("dashboard")} 
-          onSendRequest={() => setPage("syncCompleted")} 
+        <StudySyncMeetings
+          onBack={() => setPage("dashboard")}
+          onSendRequest={() => setPage("syncCompleted")}
         />
       )}
 

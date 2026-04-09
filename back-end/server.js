@@ -49,6 +49,7 @@ let profiles = [
     methods: ["In-Person"],
   },
 ];
+
 app.get("/", (req, res) => {
   res.send("Study Sync backend is running");
 });
@@ -59,6 +60,7 @@ app.get("/api/health", (req, res) => {
     message: "Backend is working"
   });
 });
+
 /* Study syncs */
 app.get("/api/syncs", (req, res) => {
   res.json(studySyncs);
@@ -98,13 +100,12 @@ app.get("/api/test", (req, res) => {
 });
 
 app.get("/api/matches", (req, res) => {
-  // return lightweight match list
   const matches = studySyncs.map((s) => ({
     id: s.id,
     username: s.title.split(" ")[0] || `user${s.id}`,
     location: s.location,
     method: "Mixed",
-    matchPercentage: Math.floor(Math.random() * 30) + 70, // mock %
+    matchPercentage: Math.floor(Math.random() * 30) + 70,
   }));
   res.json(matches);
 });
@@ -113,7 +114,6 @@ app.get("/api/matches/:id", (req, res) => {
   const id = Number(req.params.id);
   const match = studySyncs.find((s) => s.id === id);
   if (!match) return res.status(404).json({ error: "Match not found" });
-  // return full profile-like object for the match page
   res.json({
     id: match.id,
     username: match.title,

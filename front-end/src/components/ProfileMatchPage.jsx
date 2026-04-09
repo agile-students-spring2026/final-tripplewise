@@ -1,7 +1,21 @@
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
+
 export default function ProfileMatchPage({ goBack, goToDashboard }) {
+  const [matchProfile, setMatchProfile] = useState(profile || null);
+  const id = profile?.id ?? propId ?? null;
+
+  useEffect(() => {
+    if (!matchProfile && id) {
+      fetch(`${API_BASE}/api/matches/${id}`)
+        .then((r) => r.json())
+        .then((data) => setMatchProfile(data))
+        .catch(() => {});
+    }
+  }, [id, matchProfile]);
   return (
     <div style={styles.page}>
 

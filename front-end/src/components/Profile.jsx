@@ -22,7 +22,6 @@ export default function ProfilePage({
         setLoading(false);
       })
       .catch(() => {
-        // Fallback: try localStorage
         try {
           const stored = localStorage.getItem("user");
           if (stored) setUser(JSON.parse(stored));
@@ -49,7 +48,9 @@ export default function ProfilePage({
 
   const displayName =
     user
-      ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Student"
+      ? `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+        user.username ||
+        "Student"
       : "Student";
 
   const initials = displayName
