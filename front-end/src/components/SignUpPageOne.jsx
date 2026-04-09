@@ -3,33 +3,62 @@ import BackButton from "./BackButton";
 import { styles } from "../styles";
 
 export default function SignUpPageOne({ goNext, goBack }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName:  "",
+    email:     "",
+    username:  "",
+    password:  "",
+  });
+  const [error, setError]   = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function handleChange(field, value) {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }
 
   async function handleSignup() {
     setError("");
 
-    // connects to server to send username and password
+    if (!formData.username || !formData.password) {
+      setError("Username and password are required");
+      return;
+    }
+
+    setSaving(true);
     try {
-      const response = await fetch("http://localhost:3001/api/auth/signup", {
+      // Step 1: create the account (username + password)
+      const signupRes = await fetch("/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username, password })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+        }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || "Signup failed");
+      const signupData = await signupRes.json();
+      if (!signupRes.ok) {
+        setError(signupData.message || "Signup failed");
+        setSaving(false);
         return;
       }
 
-      console.log("Signup success:", data);
-      goNext?.(username);
+      // Step 2: save personal details (firstName, lastName, email)
+      await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName:  formData.lastName,
+          email:     formData.email,
+        }),
+      });
+
+      setSaving(false);
+      goNext?.(formData.username);
     } catch (err) {
+      setSaving(false);
       setError("Could not connect to backend");
     }
   }
@@ -49,34 +78,77 @@ export default function SignUpPageOne({ goNext, goBack }) {
         <p>4. Partner Up, and Study!</p>
       </div>
 
+      {/* Personal info */}
       <div style={styles.formGroup}>
-        <label style={styles.label}>Enter a Username:</label>
+        <label style={styles.label}>First Name:</label>
         <input
           type="text"
           style={styles.input}
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={formData.firstName}
+          onChange={(e) => handleChange("firstName", e.target.value)}
+          placeholder="John"
         />
       </div>
 
       <div style={styles.formGroup}>
-        <label style={styles.label}>Enter a Password:</label>
+        <label style={styles.label}>Last Name:</label>
+        <input
+          type="text"
+          style={styles.input}
+          value={formData.lastName}
+          onChange={(e) => handleChange("lastName", e.target.value)}
+          placeholder="Doe"
+        />
+      </div>
+
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Email Address:</label>
+        <input
+          type="email"
+          style={styles.input}
+          value={formData.email}
+          onChange={(e) => handleChange("email", e.target.value)}
+          placeholder="you@nyu.edu"
+        />
+      </div>
+
+      {/* Account credentials */}
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Username:</label>
+        <input
+          type="text"
+          style={styles.input}
+          value={formData.username}
+          onChange={(e) => handleChange("username", e.target.value)}
+          placeholder="Choose a username"
+        />
+      </div>
+
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Password:</label>
         <input
           type="password"
           style={styles.input}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={formData.password}
+          onChange={(e) => handleChange("password", e.target.value)}
+          placeholder="Choose a password"
         />
       </div>
 
       {error && (
-        <p style={{ color: "red", marginBottom: "12px" }}>
-          {error}
-        </p>
+        <p style={{ color: "red", marginBottom: "12px" }}>{error}</p>
       )}
 
-      <button style={styles.mainButton} onClick={handleSignup}>
-        CREATE ACCOUNT
+      <button
+        style={{
+          ...styles.mainButton,
+          backgroundColor: saving ? "#aaa" : undefined,
+          cursor: saving ? "not-allowed" : "pointer",
+        }}
+        onClick={handleSignup}
+        disabled={saving}
+      >
+        {saving ? "CREATING…" : "CREATE ACCOUNT"}
       </button>
     </div>
   );

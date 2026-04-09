@@ -2,80 +2,227 @@ import React, { useState } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
+// Hour options for the time dropdown
+const HOURS = [
+  "12:00", "12:30",
+  "1:00",  "1:30",
+  "2:00",  "2:30",
+  "3:00",  "3:30",
+  "4:00",  "4:30",
+  "5:00",  "5:30",
+  "6:00",  "6:30",
+  "7:00",  "7:30",
+  "8:00",  "8:30",
+  "9:00",  "9:30",
+  "10:00", "10:30",
+  "11:00", "11:30",
+];
+
+const dropdownStyle = {
+  height: "34px",
+  borderRadius: "8px",
+  border: "1px solid black",
+  backgroundColor: "white",
+  color: "black",
+  fontSize: "14px",
+  padding: "0 6px",
+  cursor: "pointer",
+};
+
 export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsername = "" }) {
-  const [username, setUsername] = useState(initialUsername);
-  const [classNames, setClassNames] = useState(["", "", "", ""]);
-  const [classTimes, setClassTimes] = useState(["", "", "", ""]);
+  // Schedule: 4 class slots (hour + AM/PM stored separately)
+  const [classes, setClasses] = useState([
+    { name: "", hour: "9:00", period: "AM" },
+    { name: "", hour: "9:00", period: "AM" },
+    { name: "", hour: "9:00", period: "AM" },
+    { name: "", hour: "9:00", period: "AM" },
+  ]);
+
+  // Preferred study locations: 3 slots
   const [locations, setLocations] = useState(["", "", ""]);
+
+  // Preferred study methods: 2 slots
   const [methods, setMethods] = useState(["", ""]);
 
-  function finishSignup() {
-    const newUser = {
-id: Date.now(),
-      username: username.trim() || `user_${Date.now()}`,
-      classes: classNames.filter(Boolean),
-      classTimes: classTimes.filter(Boolean),
-      locations: locations.filter(Boolean),
-      methods: methods.filter(Boolean),
-    };
-    if (typeof onComplete === "function") {
-      onComplete(newUser);
-    } else if (typeof goNext === "function") {
-      goNext();
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState("");
+
+  function updateClass(idx, field, value) {
+    setClasses((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  }
+
+  function updateLocation(idx, value) {
+    setLocations((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  }
+
+  function updateMethod(idx, value) {
+    setMethods((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  }
+
+  async function finishSignup() {
+    setError("");
+    setSaving(true);
+
+    // Combine hour + period into a readable time string e.g. "9:00 AM"
+    const filledClasses = classes
+      .filter((c) => c.name.trim())
+      .map((c, i) => ({
+        id:   Date.now() + i,
+        name: c.name.trim(),
+        time: `${c.hour} ${c.period}`,
+      }));
+
+    const filledLocations = locations.filter((l) => l.trim());
+    const filledMethods   = methods.filter((m) => m.trim());
+
+    try {
+      // Save schedule
+      if (filledClasses.length > 0) {
+        await fetch("/api/users/me/schedule", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(filledClasses),
+        });
+      }
+
+      // Save locations
+      if (filledLocations.length > 0) {
+        await fetch("/api/users/me/locations", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locations: filledLocations }),
+        });
+      }
+
+      // Save methods
+      if (filledMethods.length > 0) {
+        await fetch("/api/users/me/methods", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ methods: filledMethods }),
+        });
+      }
+
+      // Fetch the updated user to pass back to App
+      const res  = await fetch("/api/users/me");
+      const user = await res.json();
+
+      setSaving(false);
+      if (typeof onComplete === "function") onComplete(user);
+      else if (typeof goNext === "function") goNext();
+    } catch (err) {
+      setSaving(false);
+      setError("Could not connect to backend. Please try again.");
     }
   }
 
   return (
     <div style={styles.page}>
-      {/* PROFILE IMAGE */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Upload A Profile Picture:</label>
-        <div style={styles.uploadBox}>+</div>
+      <div style={styles.topRow}>
+        <BackButton onClick={goBack} />
       </div>
-      
-      {/* CLASS + TIME rows */}
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} style={styles.doubleInputRow}>
-          <div style={styles.halfInputGroup}>
-            <label style={styles.label}>{`Add Class ${i + 1}:`}</label>
-            <input value={classNames[i]} onChange={(e) => {
-              const next = [...classNames]; next[i] = e.target.value; setClassNames(next);
-            }} type="text" style={styles.input} />
+
+      <h1 style={styles.bigTitle}>SET UP PROFILE</h1>
+
+      {error && (
+        <p style={{ color: "red", marginBottom: "12px", textAlign: "center" }}>{error}</p>
+      )}
+
+      {/* CLASS + TIME (hour dropdown + AM/PM dropdown) */}
+      {classes.map((c, idx) => (
+        <div key={idx} style={{ marginBottom: 14 }}>
+          <div style={styles.doubleInputRow}>
+            {/* Class name */}
+            <div style={styles.halfInputGroup}>
+              <label style={styles.label}>Add Class {idx + 1}:</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={c.name}
+                onChange={(e) => updateClass(idx, "name", e.target.value)}
+                placeholder={`Class ${idx + 1}`}
+              />
+            </div>
+
+            {/* Time: hour + AM/PM */}
+            <div style={styles.halfInputGroup}>
+              <label style={styles.label}>Time:</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                <select
+                  value={c.hour}
+                  onChange={(e) => updateClass(idx, "hour", e.target.value)}
+                  style={{ ...dropdownStyle, flex: 2 }}
+                >
+                  {HOURS.map((h) => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+                <select
+                  value={c.period}
+                  onChange={(e) => updateClass(idx, "period", e.target.value)}
+                  style={{ ...dropdownStyle, flex: 1 }}
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div style={styles.halfInputGroup}>
-            <label style={styles.label}>Time:</label>
-            <input value={classTimes[i]} onChange={(e) => {
-              const next = [...classTimes]; next[i] = e.target.value; setClassTimes(next);
-            }} type="text" style={styles.input} />
-          </div>
         </div>
       ))}
 
-      {/* Locations */}
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} style={styles.formGroup}>
-          <label style={styles.label}>{`Preferred Study Location ${i + 1}:`}</label>
-          <input value={locations[i]} onChange={(e) => {
-            const next = [...locations]; next[i] = e.target.value; setLocations(next);
-          }} type="text" style={styles.input} />
+      {/* PREFERRED STUDY LOCATIONS */}
+      {locations.map((loc, idx) => (
+        <div key={idx} style={styles.formGroup}>
+          <label style={styles.label}>Preferred Study Location {idx + 1}:</label>
+          <input
+            type="text"
+            style={styles.input}
+            value={loc}
+            onChange={(e) => updateLocation(idx, e.target.value)}
+            placeholder="e.g. Bobst Library"
+          />
         </div>
       ))}
 
-      {/* Methods */}
-      {Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} style={styles.formGroup}>
-          <label style={styles.label}>{`Preferred Study Method ${i + 1}:`}</label>
-          <input value={methods[i]} onChange={(e) => {
-            const next = [...methods]; next[i] = e.target.value; setMethods(next);
-          }} type="text" style={styles.input} />
+      {/* PREFERRED STUDY METHODS */}
+      {methods.map((method, idx) => (
+        <div key={idx} style={styles.formGroup}>
+          <label style={styles.label}>Preferred Study Method {idx + 1}:</label>
+          <input
+            type="text"
+            style={styles.input}
+            value={method}
+            onChange={(e) => updateMethod(idx, e.target.value)}
+            placeholder="e.g. Group Study"
+          />
         </div>
       ))}
 
-      <div style={{ marginTop: 16 }}>
-        <button style={styles.mainButton} onClick={finishSignup}>
-          FINISH CREATING ACCOUNT
-        </button>
-      </div>
+      {/* SUBMIT BUTTON */}
+      <button
+        style={{
+          ...styles.mainButton,
+          backgroundColor: saving ? "#aaa" : undefined,
+          cursor: saving ? "not-allowed" : "pointer",
+        }}
+        onClick={finishSignup}
+        disabled={saving}
+      >
+        {saving ? "SAVING…" : "FINISH CREATING ACCOUNT"}
+      </button>
     </div>
   );
 }

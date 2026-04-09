@@ -1,36 +1,52 @@
+import { useState, useEffect } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-
-
-export default function ProfileMatchPage({ goBack, goToDashboard }) {
+// ProfileMatchPage – shows a match's full profile
+// App.jsx passes: profile={selectedMatchProfile} goBack={...} goToDashboard={...}
+export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
   const [matchProfile, setMatchProfile] = useState(profile || null);
-  const id = profile?.id ?? propId ?? null;
+  const [loading, setLoading] = useState(!profile);
+  const id = profile?.id ?? null;
 
+  // If we only have partial data (from the matches list), fetch the full profile
   useEffect(() => {
-    if (!matchProfile && id) {
-      fetch(`${API_BASE}/api/matches/${id}`)
+    if (id && !matchProfile) {
+      setLoading(true);
+      fetch(`/api/matches/${id}`)
         .then((r) => r.json())
-        .then((data) => setMatchProfile(data))
-        .catch(() => {});
+        .then((data) => {
+          setMatchProfile(data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
     }
-  }, [id, matchProfile]);
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.topRow}>
+          <BackButton onClick={goBack} />
+        </div>
+        <p style={{ textAlign: "center", marginTop: 40, color: "#666" }}>Loading profile…</p>
+      </div>
+    );
+  }
+
+  if (!matchProfile) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.topRow}>
+          <BackButton onClick={goBack} />
+        </div>
+        <p style={{ textAlign: "center", marginTop: 40, color: "#666" }}>Profile not found.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
-
-      {/*
-        STYLING EXPLANATIONS:
-        - profileImageBox: creates the image placeholder
-        - usernameBox: display box for username
-        - infoBox: rectangular boxes for the information
-        - infoText: styling for the text within the infoBox
-        - matchText: styling for the text that announces match percentage for scheduling + location
-        - messageBox: message input box
-
-        Please reuse these stylings for the other pages as well so that there is consistency on the appearance of our application.
-      */}
-
       <div style={styles.topRow}>
         <BackButton onClick={goBack} />
       </div>
@@ -39,43 +55,48 @@ export default function ProfileMatchPage({ goBack, goToDashboard }) {
       <div style={styles.profileImageBox}>
         PROFILE
       </div>
-      
+
       {/* USERNAME */}
-      <div style={styles.usernameBox}>USERNAME</div>
-
-      {/* CLASSES */}
-      <div style={styles.formGroup}>
-        <label style={styles.profileSectionLabel}>Classes Being Taken:</label>
-        <div style={styles.infoBox}>
-          <p style={styles.infoText}>Agile and Dev-Ops</p>
-          <p style={styles.infoText}>Applied Internet Technologies</p>
-          <p style={{ ...styles.infoText, marginBottom: 0 }}>Operating Systems</p>
-        </div>
-      </div>
-
-      {/* PREFERRED LOCATIONS */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Preferred Locations:</label>
-        <div style={styles.infoBox}>
-          <p style={styles.infoText}>Bobst Library</p>
-          <p style={styles.infoText}>Warren Weaver Hall</p>
-          <p style={{ ...styles.infoText, marginBottom: 0 }}>Washington Square Park</p>
-        </div>
-      </div>
-
-      {/* PREFERRED METHODS */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Preferred Study Methods:</label>
-        <div style={styles.infoBox}>
-          <p style={styles.infoText}>Quiet Study</p>
-          <p style={{ ...styles.infoText, marginBottom: 0 }}>
-            Energetic Conversation and Constructive Feedback
-          </p>
-        </div>
+      <div style={styles.usernameBox}>
+        {matchProfile.username || "Unknown"}
       </div>
 
       {/* MATCH SCORE */}
-      <div style={styles.matchText}>90% MATCH!</div>
+      {matchProfile.matchPercentage && (
+        <div style={styles.matchText}>
+          {matchProfile.matchPercentage}% MATCH!
+        </div>
+      )}
+
+      {/* BIO */}
+      {matchProfile.bio && (
+        <div style={styles.formGroup}>
+          <label style={styles.label}>About:</label>
+          <div style={styles.infoBox}>
+            <p style={{ ...styles.infoText, marginBottom: 0 }}>{matchProfile.bio}</p>
+          </div>
+        </div>
+      )}
+
+      {/* LOCATION */}
+      {matchProfile.location && (
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Preferred Location:</label>
+          <div style={styles.infoBox}>
+            <p style={{ ...styles.infoText, marginBottom: 0 }}>{matchProfile.location}</p>
+          </div>
+        </div>
+      )}
+
+      {/* METHOD */}
+      {matchProfile.method && (
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Study Method:</label>
+          <div style={styles.infoBox}>
+            <p style={{ ...styles.infoText, marginBottom: 0 }}>{matchProfile.method}</p>
+          </div>
+        </div>
+      )}
 
       {/* MESSAGE BOX */}
       <div style={styles.formGroup}>

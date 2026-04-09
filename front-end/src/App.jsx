@@ -129,7 +129,10 @@ export default function App() {
       )}
 
       {page === "editAccount" && (
-        <EditAccountDetails goBack={() => setPage("userProfile")} />
+        <EditAccountDetails
+          goBack={() => setPage("userProfile")}
+          onLogout={() => setPage("start")}
+        />
       )}
 
       {page === "syncCompleted" && (

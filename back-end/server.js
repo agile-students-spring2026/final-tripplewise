@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const authRoutes = require("./routes/auth");
+const { getCurrentUser, setCurrentUser } = require("./data/mockData");
 
 const app = express();
 const PORT = 3001;
@@ -48,6 +49,7 @@ let profiles = [
     methods: ["In-Person"],
   },
 ];
+
 app.get("/", (req, res) => {
   res.send("Study Sync backend is running");
 });
@@ -58,6 +60,7 @@ app.get("/api/health", (req, res) => {
     message: "Backend is working"
   });
 });
+
 /* Study syncs */
 app.get("/api/syncs", (req, res) => {
   res.json(studySyncs);
@@ -97,13 +100,12 @@ app.get("/api/test", (req, res) => {
 });
 
 app.get("/api/matches", (req, res) => {
-  // return lightweight match list
   const matches = studySyncs.map((s) => ({
     id: s.id,
     username: s.title.split(" ")[0] || `user${s.id}`,
     location: s.location,
     method: "Mixed",
-    matchPercentage: Math.floor(Math.random() * 30) + 70, // mock %
+    matchPercentage: Math.floor(Math.random() * 30) + 70,
   }));
   res.json(matches);
 });
@@ -112,7 +114,6 @@ app.get("/api/matches/:id", (req, res) => {
   const id = Number(req.params.id);
   const match = studySyncs.find((s) => s.id === id);
   if (!match) return res.status(404).json({ error: "Match not found" });
-  // return full profile-like object for the match page
   res.json({
     id: match.id,
     username: match.title,
@@ -121,6 +122,71 @@ app.get("/api/matches/:id", (req, res) => {
     bio: match.message || "",
     matchPercentage: Math.floor(Math.random() * 30) + 70,
   });
+});
+
+/* ── Current-user profile endpoints ── */
+
+// GET /api/users/me  – return the logged-in user's full profile
+app.get("/api/users/me", (req, res) => {
+  const user = getCurrentUser();
+  res.json(user);
+});
+
+// PATCH /api/users/me  – update basic account details
+app.patch("/api/users/me", (req, res) => {
+  const { username, firstName, lastName, email, phone, major, year, bio } = req.body || {};
+  const user = getCurrentUser();
+  const updated = {
+    ...user,
+    ...(username  !== undefined && { username  }),
+    ...(firstName !== undefined && { firstName }),
+    ...(lastName  !== undefined && { lastName  }),
+    ...(email     !== undefined && { email     }),
+    ...(phone     !== undefined && { phone     }),
+    ...(major     !== undefined && { major     }),
+    ...(year      !== undefined && { year      }),
+    ...(bio       !== undefined && { bio       }),
+  };
+  setCurrentUser(updated);
+  res.json({ success: true, user: updated });
+});
+
+// PUT /api/users/me/schedule  – replace the user's schedule
+app.put("/api/users/me/schedule", (req, res) => {
+  const payload = req.body;
+  if (!Array.isArray(payload)) {
+    return res.status(400).json({ error: "Expected an array of schedule items" });
+  }
+  const user = getCurrentUser();
+  const schedule = payload.map((c, i) => ({
+    id:   c.id   ?? Date.now() + i,
+    name: c.name ?? "",
+    time: c.time ?? "09:00",
+  }));
+  setCurrentUser({ ...user, schedule });
+  res.json({ success: true, schedule });
+});
+
+// PUT /api/users/me/locations  – replace the user's preferred locations
+app.put("/api/users/me/locations", (req, res) => {
+  const { locations } = req.body || {};
+  if (!Array.isArray(locations)) {
+    return res.status(400).json({ error: "Expected { locations: [] }" });
+  }
+  const user = getCurrentUser();
+  setCurrentUser({ ...user, preferredLocations: locations });
+  res.json({ success: true, preferredLocations: locations });
+});
+
+// PUT /api/users/me/methods  – replace the user's preferred study methods
+app.put("/api/users/me/methods", (req, res) => {
+  const { methods } = req.body || {};
+  if (!Array.isArray(methods)) {
+    return res.status(400).json({ error: "Expected { methods: [] }" });
+  }
+  const user = getCurrentUser();
+  setCurrentUser({ ...user, preferredMethods: methods });
+  res.json({ success: true, preferredMethods: methods });
 });
 
 app.use("/api/auth", authRoutes);
