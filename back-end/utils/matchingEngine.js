@@ -1,0 +1,143 @@
+/**
+ * Calculate match percentage between two users
+ * Database-agnostic: accepts user objects, doesn't fetch from database
+ * 
+ * Based on:
+ * - Schedule overlap (40%)
+ * - Location compatibility (30%)
+ * - Method compatibility (20%)
+ * - Subject overlap (10%)
+ * 
+ * @param {Object} user1 - First user profile with schedule, preferredLocations, preferredMethods
+ * @param {Object} user2 - Second user profile with schedule, preferredLocations, preferredMethods
+ * @returns {number} Match percentage (0-100)
+ */
+function calculateMatchPercentage(user1, user2) {
+  if (!user1 || !user2) return 0;
+  
+  let matchScore = 0;
+
+  // 1. Schedule Overlap (40% weight)
+  const scheduleMatch = calculateScheduleOverlap(
+    user1.schedule,
+    user2.schedule
+  );
+  matchScore += scheduleMatch * 0.4;
+
+  // 2. Location Compatibility (30% weight)
+  const locationMatch = calculateLocationMatch(
+    user1.preferredLocations,
+    user2.preferredLocations
+  );
+  matchScore += locationMatch * 0.3;
+
+  // 3. Method Compatibility (20% weight)
+  const methodMatch = calculateMethodMatch(
+    user1.preferredMethods,
+    user2.preferredMethods
+  );
+  matchScore += methodMatch * 0.2;
+
+  // 4. Subject/Class Overlap (10% weight)
+  const subjectMatch = calculateSubjectOverlap(
+    user1.schedule,
+    user2.schedule
+  );
+  matchScore += subjectMatch * 0.1;
+
+  return Math.round(matchScore);
+}
+
+/**
+ * Calculate schedule overlap percentage
+ * Returns 0-100 based on common time slots
+ */
+function calculateScheduleOverlap(schedule1, schedule2) {
+  if (!schedule1?.length || !schedule2?.length) return 0;
+
+  let matches = 0;
+  schedule1.forEach(item1 => {
+    schedule2.forEach(item2 => {
+      // Simple match: check if day and time are similar
+      if (extractDay(item1.time) === extractDay(item2.time)) {
+        matches++;
+      }
+    });
+  });
+
+  const maxPossible = Math.max(schedule1.length, schedule2.length);
+  return (matches / maxPossible) * 100;
+}
+
+/**
+ * Calculate location match percentage
+ * Returns 0-100 based on common preferred locations
+ */
+function calculateLocationMatch(locations1, locations2) {
+  if (!locations1?.length || !locations2?.length) return 0;
+
+  const common = locations1.filter(loc => locations2.includes(loc));
+  const union = new Set([...locations1, ...locations2]).size;
+
+  return (common.length / union) * 100;
+}
+
+/**
+ * Calculate method match percentage
+ * Returns 0-100 based on common study methods
+ */
+function calculateMethodMatch(methods1, methods2) {
+  if (!methods1?.length || !methods2?.length) return 0;
+
+  const common = methods1.filter(method => methods2.includes(method));
+  const union = new Set([...methods1, ...methods2]).size;
+
+  return (common.length / union) * 100;
+}
+
+/**
+ * Calculate subject overlap percentage
+ * Returns 0-100 based on common classes/subjects
+ */
+function calculateSubjectOverlap(schedule1, schedule2) {
+  if (!schedule1?.length || !schedule2?.length) return 0;
+
+  const subjects1 = schedule1.map(s => s.name.toLowerCase());
+  const subjects2 = schedule2.map(s => s.name.toLowerCase());
+
+  const common = subjects1.filter(subj =>
+    subjects2.some(s => s.includes(subj) || subj.includes(s))
+  );
+
+  const maxPossible = Math.max(subjects1.length, subjects2.length);
+  return (common.length / maxPossible) * 100;
+}
+
+/**
+ * Extract day from time string
+ * e.g., "Monday 2:00 PM" -> "Monday"
+ */
+function extractDay(timeStr) {
+  if (!timeStr) return "";
+  const days = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ];
+  for (const day of days) {
+    if (timeStr.includes(day)) return day;
+  }
+  return "";
+}
+
+module.exports = {
+  calculateMatchPercentage,
+  calculateScheduleOverlap,
+  calculateLocationMatch,
+  calculateMethodMatch,
+  calculateSubjectOverlap,
+};
