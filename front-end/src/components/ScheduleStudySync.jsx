@@ -27,7 +27,7 @@ export default function ScheduleStudySync({ goBack }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
-  const [customLocation, setCustomLocation] = useState(""); // FIX: separate state for "Other"
+  const [customLocation, setCustomLocation] = useState(""); 
   const [message, setMessage] = useState("");
   const [locations] = useState([
     "Bobst Library",
@@ -266,19 +266,7 @@ export default function ScheduleStudySync({ goBack }) {
                   </div>
                   {m.message && <div style={{ marginTop: 6, fontSize: 13 }}>{m.message}</div>}
                 </div>
-                <div style={{ marginLeft: 12 }}>
-                  <button
-                    style={{
-                      padding: "8px 10px",
-                      border: "none",
-                      background: "#2d9cdb",
-                      color: "white",
-                      cursor: "pointer",
-                      borderRadius: 6,
-                    }}
-                  >
-                    VIEW
-                  </button>
+                <div style={{ marginRight: 12 }}>
                 </div>
               </div>
             ))}
