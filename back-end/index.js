@@ -1,10 +1,15 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+// import CommonJS router works as default when required via import
+import matchesRouter from "./routes/matches.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// mount matches router
+app.use("/api/matches", matchesRouter);
 
 // In-memory mock data
 let schedules = [
@@ -47,6 +52,7 @@ let studySyncs = [
     message: "Recap sorting algorithms.",
   },
 ];
+
 const matches = [
   {
     id: 101,
@@ -73,6 +79,7 @@ const matches = [
     bio: "Grad student, evenings only",
   },
 ];
+
 // Health
 app.get("/health", (req, res) => res.json({ ok: true }));
 
@@ -105,7 +112,7 @@ app.post("/api/syncs", (req, res) => {
 });
 
 // Serve static if you build frontend into backend/public
-const publicPath = path.join(process.cwd(), "backend", "public");
+const publicPath = path.join(process.cwd(), "back-end", "public");
 app.use(express.static(publicPath));
 app.get("/", (req, res) => {
   if (req.accepts("html")) {
@@ -117,13 +124,8 @@ app.get("/", (req, res) => {
   res.json({ ok: true });
 });
 
-const PORT = process.env.PORT || 4000;
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => console.log(`API server listening on http://localhost:${PORT}`));
-}
 // GET all matches
 app.get("/api/matches", (req, res) => {
-  // optional: allow simple filtering via query (e.g. ?location=Bobst)
   const { location, method } = req.query;
   let out = matches;
   if (location) out = out.filter((m) => m.location === location);
@@ -138,5 +140,11 @@ app.get("/api/matches/:id", (req, res) => {
   if (!m) return res.status(404).json({ error: "Match not found" });
   res.json(m);
 });
+
+// only listen when not testing
+if (process.env.NODE_ENV !== "test") {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+}
 
 export default app;

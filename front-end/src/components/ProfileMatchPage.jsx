@@ -1,27 +1,25 @@
+import React, { useEffect, useState } from "react";
 import { useState, useEffect } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
 // ProfileMatchPage – shows a match's full profile
 // App.jsx passes: profile={selectedMatchProfile} goBack={...} goToDashboard={...}
-export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
-  const [matchProfile, setMatchProfile] = useState(profile || null);
-  const [loading, setLoading] = useState(!profile);
-  const id = profile?.id ?? null;
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
-  // If we only have partial data (from the matches list), fetch the full profile
+export default function ProfileMatchPage({ profile: propProfile, id: propId, goBack }) {
+  const [profile, setProfile] = useState(propProfile || null);
+
   useEffect(() => {
-    if (id && !matchProfile) {
-      setLoading(true);
-      fetch(`/api/matches/${id}`)
+    if (!profile && propId) {
+      fetch(`${API_BASE}/api/matches/${propId}`)
         .then((r) => r.json())
-        .then((data) => {
-          setMatchProfile(data);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
+        .then((data) => setProfile(data.data || data))
+        .catch(() => {});
     }
-  }, [id]);
+  }, [propId, profile]);
+
+  if (!profile) return <div>Loading profile…</div>;
 
   if (loading) {
     return (
