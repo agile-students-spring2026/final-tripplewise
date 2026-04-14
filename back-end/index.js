@@ -117,10 +117,12 @@ app.get("/", (req, res) => {
   res.json({ ok: true });
 });
 
+// only listen when not testing
 const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => console.log(`API server listening on http://localhost:${PORT}`));
 }
+
 // GET all matches
 app.get("/api/matches", (req, res) => {
   // optional: allow simple filtering via query (e.g. ?location=Bobst)
