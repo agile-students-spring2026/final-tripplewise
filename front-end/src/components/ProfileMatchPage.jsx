@@ -1,27 +1,30 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-// ProfileMatchPage – shows a match's full profile
-// App.jsx passes: profile={selectedMatchProfile} goBack={...} goToDashboard={...}
-export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
-  const [matchProfile, setMatchProfile] = useState(profile || null);
-  const [loading, setLoading] = useState(!profile);
-  const id = profile?.id ?? null;
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
-  // If we only have partial data (from the matches list), fetch the full profile
+export default function ProfileMatchPage({ profile: propProfile, id: propId, goBack, goToDashboard }) {
+  const [matchProfile, setMatchProfile] = useState(propProfile || null);
+  const [loading, setLoading] = useState(!propProfile && !!propId);
+
   useEffect(() => {
-    if (id && !matchProfile) {
+    if (!matchProfile && propId) {
       setLoading(true);
-      fetch(`/api/matches/${id}`)
-        .then((r) => r.json())
-        .then((data) => {
-          setMatchProfile(data);
-          setLoading(false);
+      fetch(`${API_BASE}/api/matches/${propId}`)
+        .then((r) => {
+          if (!r.ok) throw new Error("network");
+          return r.json();
         })
-        .catch(() => setLoading(false));
+        .then((data) => {
+          setMatchProfile(data.data || data);
+        })
+        .catch(() => {
+          setMatchProfile(null);
+        })
+        .finally(() => setLoading(false));
     }
-  }, [id]);
+  }, [propId, matchProfile]);
 
   if (loading) {
     return (
@@ -51,24 +54,14 @@ export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
         <BackButton onClick={goBack} />
       </div>
 
-      {/* PROFILE IMAGE */}
-      <div style={styles.profileImageBox}>
-        PROFILE
-      </div>
+      <div style={styles.profileImageBox}>PROFILE</div>
 
-      {/* USERNAME */}
-      <div style={styles.usernameBox}>
-        {matchProfile.username || "Unknown"}
-      </div>
+      <div style={styles.usernameBox}>{matchProfile.username || "Unknown"}</div>
 
-      {/* MATCH SCORE */}
       {matchProfile.matchPercentage && (
-        <div style={styles.matchText}>
-          {matchProfile.matchPercentage}% MATCH!
-        </div>
+        <div style={styles.matchText}>{matchProfile.matchPercentage}% MATCH!</div>
       )}
 
-      {/* BIO */}
       {matchProfile.bio && (
         <div style={styles.formGroup}>
           <label style={styles.label}>About:</label>
@@ -78,7 +71,6 @@ export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
         </div>
       )}
 
-      {/* LOCATION */}
       {matchProfile.location && (
         <div style={styles.formGroup}>
           <label style={styles.label}>Preferred Location:</label>
@@ -88,7 +80,6 @@ export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
         </div>
       )}
 
-      {/* METHOD */}
       {matchProfile.method && (
         <div style={styles.formGroup}>
           <label style={styles.label}>Study Method:</label>
@@ -98,14 +89,12 @@ export default function ProfileMatchPage({ profile, goBack, goToDashboard }) {
         </div>
       )}
 
-      {/* MESSAGE BOX */}
       <div style={styles.formGroup}>
         <label style={styles.label}>Send A Message:</label>
         <textarea style={styles.messageBox}></textarea>
       </div>
 
-      {/* SEND BUTTON */}
-      <button style={styles.profileActionButton} onClick={goToDashboard}>
+      <button style={styles.profileActionButton} onClick={() => (typeof goToDashboard === "function" ? goToDashboard() : null)}>
         SEND STUDY SYNC REQUEST
       </button>
     </div>

@@ -12,6 +12,7 @@ export default function SignUpPageOne({ goNext, goBack }) {
   });
   const [error, setError]   = useState("");
   const [saving, setSaving] = useState(false);
+  const signupBg = saving ? "rgba(12,12,12,0.9)" : (styles.mainButton?.backgroundColor || "#0c0c0c");
 
   function handleChange(field, value) {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -142,7 +143,7 @@ export default function SignUpPageOne({ goNext, goBack }) {
       <button
         style={{
           ...styles.mainButton,
-          backgroundColor: saving ? "#aaa" : undefined,
+          backgroundColor: signupBg,
           cursor: saving ? "not-allowed" : "pointer",
         }}
         onClick={handleSignup}

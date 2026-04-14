@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
@@ -7,32 +7,22 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 export default function StudySyncMatches({ onBack, onViewProfile }) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterBy, setFilterBy] = useState("all");
-  const [sortBy, setSortBy] = useState("match");
 
   useEffect(() => {
     let cancelled = false;
     fetch(`${API_BASE}/api/matches`)
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled) setMatches(Array.isArray(data) ? data : []);
+        if (!cancelled) setMatches(Array.isArray(data.data) ? data.data : data);
       })
-      .catch(() => {
-        // fallback: minimal mock list so UI still works
-        if (!cancelled) {
-          setMatches([
-            { id: 1, username: "John_Doe", location: "Bobst LL2", method: "In-Person", matchPercentage: 92 },
-            { id: 2, username: "Sarah_Smith", location: "NYU Library", method: "Virtual", matchPercentage: 87 },
-            { id: 3, username: "Mike_Johnson", location: "Coffee Shop", method: "In-Person", matchPercentage: 78 },
-            { id: 4, username: "Emma_Wilson", location: "Bobst LL2", method: "Hybrid", matchPercentage: 85 },
-          ]);
-        }
+      .catch((err) => {
+        console.warn("Could not load matches:", err.message);
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  if (loading) return <div>Loading matches…</div>;
 
   // Filter logic
   const filteredMatches = useMemo(() => {

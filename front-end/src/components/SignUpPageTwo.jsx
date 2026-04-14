@@ -46,6 +46,8 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsern
 
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState("");
+  const saveBg = saving ? "rgba(11,11,11,0.9)" : (styles.mainButton?.backgroundColor || "#0c0c0c");
+
 
   function updateClass(idx, field, value) {
     setClasses((prev) => {
@@ -215,8 +217,9 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsern
       <button
         style={{
           ...styles.mainButton,
-          backgroundColor: saving ? "#aaa" : undefined,
+          backgroundColor: saveBg,
           cursor: saving ? "not-allowed" : "pointer",
+          opacity: saving ? 0.95 : 1,
         }}
         onClick={finishSignup}
         disabled={saving}
