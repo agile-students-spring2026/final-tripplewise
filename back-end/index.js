@@ -1,9 +1,8 @@
-import express from "express";
-import cors from "cors";
-import path from "path";
-// import CommonJS router works as default when required via import
-import matchesRouter from "./routes/matches.js";
-
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const matchesRouter = require("./routes/matches");
+const otherRouter = require("./routes/requests");
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -144,7 +143,7 @@ app.get("/api/matches/:id", (req, res) => {
 // only listen when not testing
 if (process.env.NODE_ENV !== "test") {
   const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+  app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT}`));
 }
 
-export default app;
+module.exports = app;
