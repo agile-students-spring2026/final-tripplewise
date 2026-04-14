@@ -4,9 +4,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js --watch . --ext js,json",
-    "test": "mocha --exit --recursive",
-    "coverage": "c8 --reporter=text --reporter=lcov npm test"
+    "dev": "bash -c 'source ~/.nvm/nvm.sh && nvm use && nodemon index.js --watch . --ext js,json'",
+    "test": "bash -c 'source ~/.nvm/nvm.sh && nvm use && mocha --exit --recursive'",
+    "coverage": "bash -c 'source ~/.nvm/nvm.sh && nvm use && c8 --reporter=text --reporter=lcov npm test'",
+    "prestart": "bash -c 'source ~/.nvm/nvm.sh && nvm use'"
   },
   "dependencies": {
     "cors": "^2.8.5",

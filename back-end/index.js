@@ -2,13 +2,18 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const matchesRouter = require("./routes/matches");
-const otherRouter = require("./routes/requests");
+const requestsRouter = require("./routes/requests");
+const syncsRouter = require("./routes/syncs");
+const authRouter = require("./routes/auth");
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// mount matches router
+// mount routers
 app.use("/api/matches", matchesRouter);
+app.use("/api/requests", requestsRouter);
+app.use("/api/syncs", syncsRouter);
+app.use("/api/auth", authRouter);
 
 // In-memory mock data
 let schedules = [
@@ -32,23 +37,6 @@ let profiles = [
     classes: ["Calculus"],
     locations: ["NYU Library"],
     methods: ["Virtual"],
-  },
-];
-
-let studySyncs = [
-  {
-    id: 1,
-    title: "OS Study Group",
-    datetime: new Date(Date.now() + 86400000).toISOString(),
-    location: "Bobst Library",
-    message: "Let's focus on chapter 4.",
-  },
-  {
-    id: 2,
-    title: "Algorithms Review",
-    datetime: new Date(Date.now() - 172800000).toISOString(),
-    location: "Campus Cafe",
-    message: "Recap sorting algorithms.",
   },
 ];
 
@@ -100,16 +88,6 @@ app.post("/api/schedule", (req, res) => {
   res.json({ success: true, schedule: schedules });
 });
 
-// Study syncs
-app.get("/api/syncs", (req, res) => res.json(studySyncs));
-app.post("/api/syncs", (req, res) => {
-  const { title, datetime, location, message } = req.body || {};
-  if (!title || !datetime || !location) return res.status(400).json({ error: "Missing required fields" });
-  const newSync = { id: Date.now(), title, datetime, location, message: message || "" };
-  studySyncs.unshift(newSync);
-  res.status(201).json(newSync);
-});
-
 // Serve static if you build frontend into backend/public
 const publicPath = path.join(process.cwd(), "back-end", "public");
 app.use(express.static(publicPath));
@@ -121,23 +99,6 @@ app.get("/", (req, res) => {
     });
   }
   res.json({ ok: true });
-});
-
-// GET all matches
-app.get("/api/matches", (req, res) => {
-  const { location, method } = req.query;
-  let out = matches;
-  if (location) out = out.filter((m) => m.location === location);
-  if (method) out = out.filter((m) => m.method === method);
-  res.json(out);
-});
-
-// GET match by id
-app.get("/api/matches/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const m = matches.find((x) => x.id === id);
-  if (!m) return res.status(404).json({ error: "Match not found" });
-  res.json(m);
 });
 
 // only listen when not testing

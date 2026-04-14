@@ -7,6 +7,8 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 export default function StudySyncMatches({ onBack, onViewProfile }) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterBy, setFilterBy] = useState("all");
+  const [sortBy, setSortBy] = useState("match");
 
   useEffect(() => {
     let cancelled = false;
@@ -22,13 +24,11 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div>Loading matches…</div>;
-
   // Filter logic
   const filteredMatches = useMemo(() => {
     if (filterBy === "all") return matches;
-    if (filterBy === "location") return matches.filter((m) => m.location === "Bobst LL2");
-    if (filterBy === "method") return matches.filter((m) => m.method === "In-Person");
+    if (filterBy === "location") return matches.filter((m) => m.preferredLocations?.includes("Bobst Library"));
+    if (filterBy === "method") return matches.filter((m) => m.preferredMethods?.includes("Group Study"));
     return matches;
   }, [matches, filterBy]);
 
@@ -37,9 +37,11 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
     const sorted = [...filteredMatches];
     if (sortBy === "match") sorted.sort((a, b) => b.matchPercentage - a.matchPercentage);
     else if (sortBy === "name") sorted.sort((a, b) => a.username.localeCompare(b.username));
-    else if (sortBy === "location") sorted.sort((a, b) => a.location.localeCompare(b.location));
+    else if (sortBy === "location") sorted.sort((a, b) => (a.preferredLocations?.[0] || "").localeCompare(b.preferredLocations?.[0] || ""));
     return sorted;
   }, [filteredMatches, sortBy]);
+
+  if (loading) return <div style={styles.page}>Loading matches…</div>;
 
   return (
     <div style={styles.page}>
@@ -122,11 +124,11 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
                 {/* Match Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: "13px", fontWeight: "bold", marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {match.username}
+                    {match.firstName} {match.lastName}
                   </div>
                   <div style={{ fontSize: "11px", lineHeight: "1.5", color: "#333" }}>
-                    <div><strong>Location:</strong> {match.location}</div>
-                    <div><strong>Method:</strong> {match.method}</div>
+                    <div><strong>Major:</strong> {match.major}</div>
+                    <div><strong>Year:</strong> {match.year}</div>
                     <div><strong>% Match:</strong> {match.matchPercentage}%</div>
                   </div>
                 </div>
