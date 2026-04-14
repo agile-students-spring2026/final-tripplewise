@@ -1,31 +1,10 @@
 const express = require("express");
 const router = express.Router();
-
-let studySyncs = [
-  {
-    id: 1,
-    title: "OS Study Group",
-    datetime: new Date(Date.now() + 86400000).toISOString(),
-    location: "Bobst Library",
-    message: "Let's focus on chapter 4.",
-    members: ["john_doe", "you"],
-    maxMembers: 5,
-    status: "active"
-  },
-  {
-    id: 2,
-    title: "Algorithms Review",
-    datetime: new Date(Date.now() - 172800000).toISOString(),
-    location: "Campus Cafe",
-    message: "Recap sorting algorithms.",
-    members: ["sarah_smith"],
-    maxMembers: 4,
-    status: "completed"
-  },
-];
+const { getStudySyncs, setStudySyncs } = require("../data/sharedData");
 
 // GET /api/syncs - retrieve all confirmed study syncs
 router.get("/", (req, res) => {
+  const studySyncs = getStudySyncs();
   res.json({
     success: true,
     data: studySyncs
@@ -42,6 +21,7 @@ router.post("/", (req, res) => {
     });
   }
   
+  const studySyncs = getStudySyncs();
   const newSync = {
     id: Math.max(...studySyncs.map(s => s.id), 0) + 1,
     title: title,
@@ -54,6 +34,7 @@ router.post("/", (req, res) => {
   };
   
   studySyncs.push(newSync);
+  setStudySyncs(studySyncs);
   
   res.status(201).json({
     success: true,
@@ -71,6 +52,7 @@ router.post("/:id/join", (req, res) => {
     return res.status(400).json({ error: "Username required" });
   }
   
+  const studySyncs = getStudySyncs();
   const sync = studySyncs.find(s => s.id === syncId);
   
   if (!sync) {
@@ -86,6 +68,7 @@ router.post("/:id/join", (req, res) => {
   }
   
   sync.members.push(username);
+  setStudySyncs(studySyncs);
   
   res.json({
     success: true,
@@ -103,6 +86,7 @@ router.post("/:id/leave", (req, res) => {
     return res.status(400).json({ error: "Username required" });
   }
   
+  const studySyncs = getStudySyncs();
   const sync = studySyncs.find(s => s.id === syncId);
   
   if (!sync) {
@@ -114,6 +98,7 @@ router.post("/:id/leave", (req, res) => {
   }
   
   sync.members = sync.members.filter(m => m !== username);
+  setStudySyncs(studySyncs);
   
   res.json({
     success: true,
@@ -131,6 +116,7 @@ router.put("/:id/status", (req, res) => {
     return res.status(400).json({ error: "Status must be 'active' or 'completed'" });
   }
   
+  const studySyncs = getStudySyncs();
   const sync = studySyncs.find(s => s.id === syncId);
   
   if (!sync) {
@@ -138,6 +124,7 @@ router.put("/:id/status", (req, res) => {
   }
   
   sync.status = status;
+  setStudySyncs(studySyncs);
   
   res.json({
     success: true,

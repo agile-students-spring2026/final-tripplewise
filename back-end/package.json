@@ -7,7 +7,7 @@
     "dev": "nodemon server.js",
     "test": "mocha --exit --recursive",
     "coverage": "c8 --reporter=text --reporter=lcov npm test",
-    "coverage:check": "c8 --reporter=text --reporter=lcov --lines 10 --branches 10 --functions 10 --statements 10 npm test"
+    "coverage:check": "c8 --reporter=text --reporter=lcov --lines 50 --branches 50 --functions 50 --statements 50 npm test && echo \"Coverage requirement met (50%)\""
   },
   "dependencies": {
     "cors": "^2.8.5",

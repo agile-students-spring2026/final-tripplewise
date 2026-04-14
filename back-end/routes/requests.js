@@ -1,45 +1,10 @@
 const express = require("express");
 const router = express.Router();
-
-let meetingRequests = [
-  {
-    id: 1,
-    fromUser: "Sarah_Smith",
-    date: "1/1/2026",
-    time: "12:30 PM",
-    location: "Bobst LL2",
-    status: "pending"
-  },
-  {
-    id: 2,
-    fromUser: "Mike_Johnson",
-    date: "1/2/2026",
-    time: "2:00 PM",
-    location: "NYU Library",
-    status: "pending"
-  }
-];
-
-// Store syncs for approve operation
-let studySyncs = [
-  {
-    id: 1,
-    title: "OS Study Group",
-    datetime: new Date(Date.now() + 86400000).toISOString(),
-    location: "Bobst Library",
-    message: "Let's focus on chapter 4.",
-  },
-  {
-    id: 2,
-    title: "Algorithms Review",
-    datetime: new Date(Date.now() - 172800000).toISOString(),
-    location: "Campus Cafe",
-    message: "Recap sorting algorithms.",
-  },
-];
+const { getStudySyncs, setStudySyncs, getMeetingRequests, setMeetingRequests } = require("../data/sharedData");
 
 // GET /api/requests - retrieve all pending meeting requests
 router.get("/", (req, res) => {
+  const meetingRequests = getMeetingRequests();
   res.json({
     success: true,
     data: meetingRequests
@@ -56,6 +21,7 @@ router.post("/", (req, res) => {
     });
   }
   
+  const meetingRequests = getMeetingRequests();
   const newRequest = {
     id: Math.max(...meetingRequests.map(r => r.id), 0) + 1,
     fromUser: "CurrentUser",
@@ -66,6 +32,7 @@ router.post("/", (req, res) => {
   };
   
   meetingRequests.push(newRequest);
+  setMeetingRequests(meetingRequests);
   
   res.status(201).json({
     success: true,
@@ -77,6 +44,7 @@ router.post("/", (req, res) => {
 // POST /api/requests/:id/approve - approve a meeting request
 router.post("/:id/approve", (req, res) => {
   const requestId = parseInt(req.params.id);
+  const meetingRequests = getMeetingRequests();
   const requestIndex = meetingRequests.findIndex(r => r.id === requestId);
   
   if (requestIndex === -1) {
@@ -84,6 +52,7 @@ router.post("/:id/approve", (req, res) => {
   }
   
   const request = meetingRequests[requestIndex];
+  const studySyncs = getStudySyncs();
   
   // Create a new confirmed study sync from the approved request
   const newSync = {
@@ -98,9 +67,11 @@ router.post("/:id/approve", (req, res) => {
   };
   
   studySyncs.push(newSync);
+  setStudySyncs(studySyncs);
   
   // Remove request from pending
   meetingRequests.splice(requestIndex, 1);
+  setMeetingRequests(meetingRequests);
   
   res.json({
     success: true,
@@ -112,6 +83,7 @@ router.post("/:id/approve", (req, res) => {
 // POST /api/requests/:id/reject - reject a meeting request
 router.post("/:id/reject", (req, res) => {
   const requestId = parseInt(req.params.id);
+  const meetingRequests = getMeetingRequests();
   const requestIndex = meetingRequests.findIndex(r => r.id === requestId);
   
   if (requestIndex === -1) {
@@ -120,6 +92,7 @@ router.post("/:id/reject", (req, res) => {
   
   const rejectedRequest = meetingRequests[requestIndex];
   meetingRequests.splice(requestIndex, 1);
+  setMeetingRequests(meetingRequests);
   
   res.json({
     success: true,
