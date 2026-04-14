@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
@@ -51,16 +50,7 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
           STUDY SYNC<br />MATCHES
         </h1>
       </div>
-    <div>
-      {/* map matches and call onViewProfile(match) when user taps */}
-      {matches.map((m) => (
-        <div key={m.id} onClick={() => onViewProfile(m)} style={{ cursor: "pointer" }}>
-          <div>{m.username}</div>
-          <div>{m.location}</div>
-        </div>
-      ))}
-    </div>
-    
+
       {/* Filter and Sort Controls */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
         <div style={{ flex: 1 }}>
