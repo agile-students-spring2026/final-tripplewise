@@ -1,13 +1,19 @@
 const express = require("express");
 const cors = require("cors");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db");
+
 const authRoutes = require("./routes/auth");
 const syncsRoutes = require("./routes/syncs");
 const requestsRoutes = require("./routes/requests");
 const matchesRoutes = require("./routes/matches");
 const { getCurrentUser, setCurrentUser } = require("./data/mockData");
 
+dotenv.config();
+connectDB();
+
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -44,14 +50,14 @@ app.patch("/api/users/me", (req, res) => {
   const user = getCurrentUser();
   const updated = {
     ...user,
-    ...(username  !== undefined && { username  }),
+    ...(username !== undefined && { username }),
     ...(firstName !== undefined && { firstName }),
-    ...(lastName  !== undefined && { lastName  }),
-    ...(email     !== undefined && { email     }),
-    ...(phone     !== undefined && { phone     }),
-    ...(major     !== undefined && { major     }),
-    ...(year      !== undefined && { year      }),
-    ...(bio       !== undefined && { bio       }),
+    ...(lastName !== undefined && { lastName }),
+    ...(email !== undefined && { email }),
+    ...(phone !== undefined && { phone }),
+    ...(major !== undefined && { major }),
+    ...(year !== undefined && { year }),
+    ...(bio !== undefined && { bio }),
   };
   setCurrentUser(updated);
   res.json({ success: true, user: updated });
@@ -65,7 +71,7 @@ app.put("/api/users/me/schedule", (req, res) => {
   }
   const user = getCurrentUser();
   const schedule = payload.map((c, i) => ({
-    id:   c.id   ?? Date.now() + i,
+    id: c.id ?? Date.now() + i,
     name: c.name ?? "",
     time: c.time ?? "09:00",
   }));
@@ -96,8 +102,10 @@ app.put("/api/users/me/methods", (req, res) => {
 });
 
 // ===== START SERVER =====
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
