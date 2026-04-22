@@ -16,7 +16,7 @@ export default function LoginPage({ goBack, onLogin }) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email: username, password })
       });
 
       const data = await response.json();
@@ -27,9 +27,9 @@ export default function LoginPage({ goBack, onLogin }) {
       }
 
       // normalize the user object and call onLogin once
-      const userObj = { id: data.id || Date.now(), username: data.username || username };
-      console.log("Login success:", userObj);
-      onLogin(userObj);
+      localStorage.setItem("token", data.token);
+      onLogin(data.user);
+      console.log("Login success:", data.user);
     } catch (err) {
       setError("Could not connect to backend");
     }
@@ -47,7 +47,7 @@ export default function LoginPage({ goBack, onLogin }) {
       </p>
 
       <div style={styles.formGroup}>
-        <label style={styles.label}>Username</label>
+        <label style={styles.label}>Email</label>
         <input
           type="text"
           style={styles.input}

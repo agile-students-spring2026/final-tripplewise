@@ -34,27 +34,20 @@ export default function SignUpPageOne({ goNext, goBack }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: formData.username,
+          email: formData.email,
           password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
         }),
       });
 
       const signupData = await signupRes.json();
+      localStorage.setItem("token", signupData.token);
       if (!signupRes.ok) {
         setError(signupData.message || "Signup failed");
         setSaving(false);
         return;
       }
-
-      // Step 2: save personal details (firstName, lastName, email)
-      await fetch("/api/users/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName:  formData.lastName,
-          email:     formData.email,
-        }),
-      });
 
       setSaving(false);
       goNext?.(formData.username);
