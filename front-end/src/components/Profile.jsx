@@ -1,9 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-// Profile page – loads the current user from GET /api/users/me
-export default function ProfilePage({
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
+function getAuthHeader() {
+  const token = localStorage.getItem("authToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export default function Profile({
+  currentUser,
   goBack,
   onEditSchedule,
   onEditLocations,
@@ -11,29 +18,32 @@ export default function ProfilePage({
   onEditAccount,
   onLogout,
 }) {
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/users/me")
+    if (!currentUser?.id) {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`${API_BASE}/api/profile`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    })
       .then((r) => r.json())
       .then((data) => {
-        setUser(data);
-        setLoading(false);
+        if (data.success && data.data) {
+          setProfile(data.data);
+        } else {
+          setProfile(currentUser);
+        }
       })
-      .catch(() => {
-        try {
-          const stored = localStorage.getItem("user");
-          if (stored) setUser(JSON.parse(stored));
-        } catch (_) {}
-        setLoading(false);
-      });
-  }, []);
-
-  const handle = (cb, fallbackMsg) => {
-    if (typeof cb === "function") cb();
-    else alert(fallbackMsg);
-  };
+      .catch(() => setProfile(currentUser))
+      .finally(() => setLoading(false));
+  }, [currentUser?.id]);
 
   if (loading) {
     return (
@@ -41,24 +51,28 @@ export default function ProfilePage({
         <div style={styles.topRow}>
           <BackButton onClick={goBack} />
         </div>
-        <p style={{ textAlign: "center", marginTop: 40, color: "#666" }}>Loading profile…</p>
+        <p style={{ textAlign: "center", marginTop: 40 }}>Loading profile…</p>
       </div>
     );
   }
 
-  const displayName =
-    user
-      ? `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-        user.username ||
-        "Student"
-      : "Student";
+  // Use currentUser directly — don't fetch from backend yet
+  const userData = currentUser || {};
+  const username = userData.username || "Student";
+  const email = userData.email || "";
 
-  const initials = displayName
+  console.log("Profile currentUser:", currentUser);
+  console.log("Profile username:", username);
+  console.log("Profile email:", email);
+
+  const initials = String(username)
     .split(" ")
-    .map((s) => s[0])
     .slice(0, 2)
+    .map((n) => n[0])
     .join("")
-    .toUpperCase();
+    .toUpperCase() || "?";
+
+  console.log("Profile initials:", initials);
 
   return (
     <div style={styles.page}>
@@ -94,18 +108,13 @@ export default function ProfilePage({
           </div>
 
           <div>
-            <div style={{ fontSize: 20, fontWeight: 600 }}>{displayName}</div>
-            <div style={{ color: "#666", marginTop: 4 }}>{user?.email || ""}</div>
-            {user?.major && (
-              <div style={{ color: "#888", fontSize: 13, marginTop: 2 }}>
-                {user.major}{user.year ? ` · ${user.year}` : ""}
-              </div>
-            )}
+            <div style={{ fontSize: 20, fontWeight: 600 }}>{username}</div>
+            <div style={{ color: "#666", marginTop: 4 }}>{email}</div>
           </div>
         </div>
 
         {/* Bio */}
-        {user?.bio && (
+        {userData?.bio && (
           <div
             style={{
               background: "#f5f5f5",
@@ -116,7 +125,7 @@ export default function ProfilePage({
               color: "#444",
             }}
           >
-            {user.bio}
+            {userData.bio}
           </div>
         )}
 
@@ -124,7 +133,7 @@ export default function ProfilePage({
         <div style={{ display: "grid", gap: 10 }}>
           <button
             type="button"
-            onClick={() => handle(onEditSchedule, "Edit Schedule")}
+            onClick={onEditSchedule}
             style={{
               padding: "12px 16px",
               background: "grey",
@@ -140,7 +149,7 @@ export default function ProfilePage({
 
           <button
             type="button"
-            onClick={() => handle(onEditLocations, "Edit preferred study locations")}
+            onClick={onEditLocations}
             style={{
               padding: "12px 16px",
               background: "grey",
@@ -156,7 +165,7 @@ export default function ProfilePage({
 
           <button
             type="button"
-            onClick={() => handle(onEditMethods, "Edit preferred study methods")}
+            onClick={onEditMethods}
             style={{
               padding: "12px 16px",
               background: "grey",
@@ -170,25 +179,27 @@ export default function ProfilePage({
             Edit Preferred Study Methods
           </button>
 
-          <button
-            type="button"
-            onClick={() => handle(onEditAccount, "Edit account details")}
-            style={{
-              padding: "12px 16px",
-              background: "grey",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-              textAlign: "left",
-              borderRadius: 6,
-            }}
-          >
-            Edit Account Details
-          </button>
+          {onEditAccount && (
+            <button
+              type="button"
+              onClick={onEditAccount}
+              style={{
+                padding: "12px 16px",
+                background: "grey",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+                textAlign: "left",
+                borderRadius: 6,
+              }}
+            >
+              Edit Account Details
+            </button>
+          )}
 
           <button
             type="button"
-            onClick={() => handle(onLogout, "Logout")}
+            onClick={onLogout}
             style={{
               padding: "12px 16px",
               background: "grey",
