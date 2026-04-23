@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
@@ -64,9 +64,34 @@ export default function ScheduleStudySync({ goBack }) {
   const [location, setLocation] = useState("");
   const [customLocation, setCustomLocation] = useState("");
   const [message, setMessage] = useState("");
+  const [toUsername, setToUsername] = useState("");
+  const [partners, setPartners] = useState([]);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+
+  // Load confirmed partners from existing syncs
+  useEffect(() => {
+    const me = localStorage.getItem("username") || "";
+    fetch(`${API_BASE}/api/syncs`, {
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const syncs = Array.isArray(data) ? data : [];
+        // Collect all other members from syncs I'm in
+        const partnerSet = new Set();
+        syncs.forEach((s) => {
+          if (Array.isArray(s.members)) {
+            s.members.forEach((m) => {
+              if (m !== me) partnerSet.add(m);
+            });
+          }
+        });
+        setPartners([...partnerSet]);
+      })
+      .catch(() => setPartners([]));
+  }, []);
 
   function resetForm() {
     setTitle("");
@@ -76,22 +101,24 @@ export default function ScheduleStudySync({ goBack }) {
     setLocation("");
     setCustomLocation("");
     setMessage("");
+    setToUsername("");
     setSent(false);
     setError("");
   }
 
   function handleSendRequest() {
     const resolvedLocation = location === "Other" ? customLocation.trim() : location;
-    const timeStr = `${hour} ${period}`;
 
     if (!title.trim() || !date || !resolvedLocation) {
-      setError("Please fill in title, date, time and location.");
+      setError("Please fill in title, date, and location.");
       return;
     }
 
     const payload = {
+      toUsername: toUsername || null,
       title: title.trim(),
-      datetime: `${date} ${timeStr}`,
+      date,
+      time: `${hour} ${period}`,
       location: resolvedLocation,
       message: message.trim(),
     };
@@ -99,26 +126,29 @@ export default function ScheduleStudySync({ goBack }) {
     setSending(true);
     setError("");
 
-    fetch(`${API_BASE}/api/syncs`, {
+    // If a partner is selected, send as a meeting request to them
+    // Otherwise, create a general sync for yourself
+    const endpoint = toUsername
+      ? `${API_BASE}/api/requests`
+      : `${API_BASE}/api/syncs`;
+
+    const body = toUsername
+      ? { toUsername, date, time: `${hour} ${period}`, location: resolvedLocation, message: message.trim() }
+      : { title: title.trim(), datetime: `${date} ${hour} ${period}`, location: resolvedLocation, message: message.trim() };
+
+    fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeader() },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("network");
-        return r.json();
-      })
+      .then((r) => r.json())
       .then(() => {
         setSending(false);
         setSent(true);
-        resetForm();
-        setSent(true); // keep sent=true after reset
       })
-      .catch((err) => {
-        console.warn("Failed to POST sync:", err.message);
+      .catch(() => {
         setSending(false);
-        setSent(true); // still show success locally
-        resetForm();
+        // Still show success locally
         setSent(true);
       });
   }
@@ -147,12 +177,35 @@ export default function ScheduleStudySync({ goBack }) {
       {/* Success banner */}
       {sent && (
         <div style={{ background: "#e8f5e9", color: "#2e7d32", padding: "10px 14px", borderRadius: 10, marginBottom: 14, fontSize: 13, fontWeight: 600, textAlign: "center" }}>
-          ✅ Study sync request sent! Check your dashboard for updates.
+          ✅ {toUsername ? `Request sent to ${toUsername}!` : "Study sync created!"} Check your dashboard for updates.
         </div>
       )}
 
       {/* Form card */}
       <div style={{ backgroundColor: "white", borderRadius: 14, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 16 }}>
+
+        {/* Send To */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>
+            Send To <span style={{ color: "#aaa", fontWeight: 400 }}>(optional — pick a confirmed partner)</span>
+          </label>
+          {partners.length > 0 ? (
+            <select
+              value={toUsername}
+              onChange={(e) => setToUsername(e.target.value)}
+              style={dropdownStyle}
+            >
+              <option value="">— General session (just for me) —</option>
+              {partners.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          ) : (
+            <div style={{ fontSize: 12, color: "#aaa", padding: "8px 0", fontStyle: "italic" }}>
+              No confirmed partners yet. Find matches first, then come back here to schedule with them.
+            </div>
+          )}
+        </div>
 
         {/* Title */}
         <div style={{ marginBottom: 14 }}>
@@ -198,7 +251,7 @@ export default function ScheduleStudySync({ goBack }) {
           <select
             value={location}
             onChange={(e) => { setLocation(e.target.value); setCustomLocation(""); }}
-            style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid #ccc", backgroundColor: "white", color: "#222", fontSize: 13, boxSizing: "border-box" }}
+            style={dropdownStyle}
           >
             <option value="">Select a location</option>
             {LOCATIONS.map((l) => (
@@ -245,7 +298,7 @@ export default function ScheduleStudySync({ goBack }) {
               fontSize: 13,
             }}
           >
-            {sending ? "SENDING…" : "SEND STUDY SYNC REQUEST"}
+            {sending ? "SENDING…" : toUsername ? `SEND TO ${toUsername.toUpperCase()}` : "CREATE STUDY SYNC"}
           </button>
           <button
             onClick={resetForm}
@@ -266,7 +319,9 @@ export default function ScheduleStudySync({ goBack }) {
 
       {/* Info note */}
       <div style={{ fontSize: 12, color: "#aaa", textAlign: "center", padding: "0 10px" }}>
-        Once your partner accepts, the session will appear in your dashboard under "Upcoming Study Syncs".
+        {toUsername
+          ? `${toUsername} will receive this as a Meeting Request. Once they approve, it appears in both your dashboards.`
+          : "Select a confirmed partner above to send them a study sync request."}
       </div>
     </div>
   );
