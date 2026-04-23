@@ -9,12 +9,12 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
   const fetchData = useCallback(async () => {
     try {
       // Fetch confirmed study syncs
-      const syncsRes = await fetch("http://localhost:3001/api/syncs");
+      const syncsRes = await fetch("/api/syncs");
       const syncsData = await syncsRes.json();
       setStudySyncs(syncsData.data || []);
       
       // Fetch pending meeting requests
-      const requestsRes = await fetch("http://localhost:3001/api/requests");
+      const requestsRes = await fetch("/api/requests");
       const requestsData = await requestsRes.json();
       setMeetingRequests(requestsData.data || []);
     } catch (err) {
@@ -33,14 +33,14 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
 
   const handleApproveMeeting = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/requests/${id}/approve`, {
+      const response = await fetch(`/api/requests/${id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });
       
       if (response.ok) {
         // Remove from meeting requests and refresh both lists
-        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+        setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
         fetchData(); // Refresh syncs list
       }
     } catch (err) {
@@ -50,13 +50,13 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
 
   const handleRejectMeeting = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/requests/${id}/reject`, {
+      const response = await fetch(`/api/requests/${id}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });
       
       if (response.ok) {
-        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+        setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
       }
     } catch (err) {
       console.error("Error rejecting meeting:", err);
@@ -207,7 +207,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
               >
                 {studySyncs.map((sync, index) => (
                   <div
-                    key={sync.id}
+                    key={sync._id}
                     style={{
                       padding: "14px 12px",
                       borderBottom:
@@ -268,7 +268,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
               >
                 {meetingRequests.map((request, index) => (
                   <div
-                    key={request.id}
+                    key={request._id}
                     style={{
                       padding: "12px",
                       borderBottom:
@@ -293,7 +293,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
                       }}
                     >
                       <button
-                        onClick={() => handleApproveMeeting(request.id)}
+                        onClick={() => handleApproveMeeting(request._id)}
                         style={{
                           flex: 1,
                           backgroundColor: "#4CAF50",
@@ -308,7 +308,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
                         APPROVE
                       </button>
                       <button
-                        onClick={() => handleRejectMeeting(request.id)}
+                        onClick={() => handleRejectMeeting(request._id)}
                         style={{
                           flex: 1,
                           backgroundColor: "#f44336",
