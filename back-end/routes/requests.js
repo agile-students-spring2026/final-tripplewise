@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const User = require("../models/User");
-const { getStudySyncs, setStudySyncs, getMeetingRequests, setMeetingRequests } = require("../data/sharedData");
+const MeetingRequest = require("../models/MeetingRequest");
+const StudySync = require("../models/StudySync");
 
 // GET /api/requests - retrieve pending meeting requests sent TO the logged-in user
 router.get("/", authMiddleware, async (req, res) => {
@@ -10,16 +11,13 @@ router.get("/", authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.userId).select("username");
     const username = user?.username || "";
 
-    // Only return requests where toUser matches the logged-in user (case-insensitive)
-    const allRequests = getMeetingRequests();
-    const userRequests = allRequests.filter(
-      (r) => r.toUser && r.toUser.toLowerCase() === username.toLowerCase()
-    );
+    // Find all pending requests where toUser matches (case-insensitive)
+    const userRequests = await MeetingRequest.find({
+      toUser: { $regex: new RegExp(`^${username}$`, "i") },
+      status: "pending",
+    });
 
-    // Normalize: ensure each request has both id and _id for frontend compatibility
-    const normalized = userRequests.map((r) => ({ ...r, _id: r._id || r.id }));
-
-    res.json(normalized);
+    res.json(userRequests);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -29,7 +27,7 @@ router.get("/", authMiddleware, async (req, res) => {
 // POST /api/requests - send a match/meeting request to another user
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { toUserId, toUsername, date, time, location } = req.body;
+    const { toUsername, date, time, location, message } = req.body;
 
     if (!toUsername || !date || !time || !location) {
       return res.status(400).json({
@@ -40,20 +38,15 @@ router.post("/", authMiddleware, async (req, res) => {
     const fromUser = await User.findById(req.user.userId).select("username");
     const fromUsername = fromUser?.username || "unknown";
 
-    const meetingRequests = getMeetingRequests();
-    const newRequest = {
-      id: Math.max(...meetingRequests.map((r) => r.id), 0) + 1,
+    const newRequest = await MeetingRequest.create({
       fromUser: fromUsername,
-      toUser: toUsername,   // stored as-is; GET filter is case-insensitive
+      toUser: toUsername,
       date,
       time,
       location,
-      message: req.body.message || "",
+      message: message || "",
       status: "pending",
-    };
-
-    meetingRequests.push(newRequest);
-    setMeetingRequests(meetingRequests);
+    });
 
     res.status(201).json({
       success: true,
@@ -69,38 +62,30 @@ router.post("/", authMiddleware, async (req, res) => {
 // POST /api/requests/:id/approve - approve a meeting request
 router.post("/:id/approve", authMiddleware, async (req, res) => {
   try {
-    const requestId = parseInt(req.params.id);
     const user = await User.findById(req.user.userId).select("username");
     const username = user?.username || "";
 
-    const meetingRequests = getMeetingRequests();
-    const requestIndex = meetingRequests.findIndex((r) => r.id === requestId);
+    const request = await MeetingRequest.findById(req.params.id);
 
-    if (requestIndex === -1) {
+    if (!request) {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    const request = meetingRequests[requestIndex];
-    const studySyncs = getStudySyncs();
-
     // Create a confirmed study sync from the approved request
-    const newSync = {
-      id: Math.max(...studySyncs.map((s) => s.id), 0) + 1,
+    const newSync = await StudySync.create({
       title: `Study with ${request.fromUser}`,
-      datetime: `${request.date} ${request.time}`,
+      datetime: new Date(`${request.date} ${request.time}`),
       location: request.location,
-      message: "Confirmed study sync",
+      message: request.message || "Confirmed study sync",
       members: [username, request.fromUser],
       maxMembers: 5,
       status: "active",
-    };
+      createdBy: username,
+    });
 
-    studySyncs.push(newSync);
-    setStudySyncs(studySyncs);
-
-    // Remove from pending
-    meetingRequests.splice(requestIndex, 1);
-    setMeetingRequests(meetingRequests);
+    // Mark request as approved
+    request.status = "approved";
+    await request.save();
 
     res.json({
       success: true,
@@ -116,22 +101,19 @@ router.post("/:id/approve", authMiddleware, async (req, res) => {
 // POST /api/requests/:id/reject - reject a meeting request
 router.post("/:id/reject", authMiddleware, async (req, res) => {
   try {
-    const requestId = parseInt(req.params.id);
-    const meetingRequests = getMeetingRequests();
-    const requestIndex = meetingRequests.findIndex((r) => r.id === requestId);
+    const request = await MeetingRequest.findById(req.params.id);
 
-    if (requestIndex === -1) {
+    if (!request) {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    const rejectedRequest = meetingRequests[requestIndex];
-    meetingRequests.splice(requestIndex, 1);
-    setMeetingRequests(meetingRequests);
+    request.status = "rejected";
+    await request.save();
 
     res.json({
       success: true,
       message: "Meeting request rejected",
-      data: rejectedRequest,
+      data: request,
     });
   } catch (err) {
     console.error(err);
