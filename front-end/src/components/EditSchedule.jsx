@@ -18,14 +18,15 @@ const HOURS = [
 ];
 
 const dropdownStyle = {
-  height: "34px",
-  borderRadius: "8px",
-  border: "1px solid black",
+  height: "38px",
+  borderRadius: "10px",
+  border: "1px solid #ccc",
   backgroundColor: "white",
   color: "black",
   fontSize: "14px",
-  padding: "0 6px",
+  padding: "0 8px",
   cursor: "pointer",
+  boxSizing: "border-box",
 };
 
 // Edit Schedule – loads from GET /api/users/me and saves via PUT /api/users/me/schedule
@@ -36,26 +37,37 @@ export default function EditSchedule({ goBack }) {
 
   // Load the user's current schedule on mount
   useEffect(() => {
-    fetch("/api/users/me")
+    const token = localStorage.getItem("token");
+    fetch("/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data.schedule) && data.schedule.length) {
-          // Normalize existing entries to have hour + period fields
+          // Normalize existing entries to have hour + period + day fields
           const normalized = data.schedule.map((c) => {
+            let hour = "9:00";
+            let period = "AM";
             // If time is already "9:00 AM" format, split it
             if (c.time && c.time.includes(" ")) {
               const parts = c.time.split(" ");
-              return { ...c, hour: parts[0], period: parts[1] || "AM" };
+              hour = parts[0] || "9:00";
+              period = parts[1] || "AM";
             }
-            return { ...c, hour: "9:00", period: "AM" };
+            return {
+              ...c,
+              hour,
+              period,
+              day: c.day || "",   // preserve saved day
+            };
           });
           setClasses(normalized);
         } else {
-          setClasses([{ id: Date.now(), name: "", hour: "9:00", period: "AM" }]);
+          setClasses([{ id: Date.now(), name: "", day: "", hour: "9:00", period: "AM" }]);
         }
       })
       .catch(() => {
-        setClasses([{ id: Date.now(), name: "", hour: "9:00", period: "AM" }]);
+        setClasses([{ id: Date.now(), name: "", day: "", hour: "9:00", period: "AM" }]);
       });
   }, []);
 
@@ -70,7 +82,7 @@ export default function EditSchedule({ goBack }) {
   function addClass() {
     setClasses((prev) => [
       ...prev,
-      { id: Date.now() + Math.random(), name: "", hour: "9:00", period: "AM" },
+      { id: Date.now() + Math.random(), name: "", day: "", hour: "9:00", period: "AM" },
     ]);
   }
 
@@ -86,12 +98,14 @@ export default function EditSchedule({ goBack }) {
     const payload = classes.map((c) => ({
       id:   c.id,
       name: c.name,
+      day:  c.day || "",
       time: `${c.hour} ${c.period}`,
     }));
 
+    const token = localStorage.getItem("token");
     fetch("/api/users/me/schedule", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
     })
       .then((r) => r.json())
@@ -135,42 +149,58 @@ export default function EditSchedule({ goBack }) {
 
       {/* Class rows */}
       {classes.map((c, idx) => (
-        <div key={c.id} style={{ marginBottom: 14 }}>
-          <div style={styles.doubleInputRow}>
-            {/* Class name */}
-            <div style={styles.halfInputGroup}>
-              <label style={styles.label}>Class {idx + 1}:</label>
-              <input
-                type="text"
-                placeholder={`Class name`}
-                value={c.name}
-                onChange={(e) => updateClass(idx, "name", e.target.value)}
-                style={styles.input}
-              />
-            </div>
+        <div key={c.id} style={{ marginBottom: 16, padding: "12px", border: "1px solid #eee", borderRadius: 8, background: "white" }}>
+          {/* Class name */}
+          <label style={styles.label}>Class {idx + 1}:</label>
+          <input
+            type="text"
+            placeholder="Class name"
+            value={c.name}
+            onChange={(e) => updateClass(idx, "name", e.target.value)}
+            style={{ ...styles.input, width: "100%", marginBottom: 8, boxSizing: "border-box" }}
+          />
 
-            {/* Time: hour + AM/PM */}
-            <div style={styles.halfInputGroup}>
-              <label style={styles.label}>Time:</label>
-              <div style={{ display: "flex", gap: 6 }}>
-                <select
-                  value={c.hour}
-                  onChange={(e) => updateClass(idx, "hour", e.target.value)}
-                  style={{ ...dropdownStyle, flex: 2 }}
-                >
-                  {HOURS.map((h) => (
-                    <option key={h} value={h}>{h}</option>
-                  ))}
-                </select>
-                <select
-                  value={c.period}
-                  onChange={(e) => updateClass(idx, "period", e.target.value)}
-                  style={{ ...dropdownStyle, flex: 1 }}
-                >
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
-              </div>
+          {/* Day + Time row */}
+          <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
+            <div style={{ flex: 2 }}>
+              <label style={{ ...styles.label, fontSize: 11 }}>📅 Day:</label>
+              <select
+                value={c.day || ""}
+                onChange={(e) => updateClass(idx, "day", e.target.value)}
+                style={{ ...dropdownStyle, width: "100%" }}
+              >
+                <option value="">Select day</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ ...styles.label, fontSize: 11 }}>Time:</label>
+              <select
+                value={c.hour}
+                onChange={(e) => updateClass(idx, "hour", e.target.value)}
+                style={{ ...dropdownStyle, width: "100%" }}
+              >
+                {HOURS.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: "0 0 64px" }}>
+              <label style={{ ...styles.label, fontSize: 11 }}>AM/PM:</label>
+              <select
+                value={c.period}
+                onChange={(e) => updateClass(idx, "period", e.target.value)}
+                style={{ ...dropdownStyle, width: "100%" }}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
             </div>
           </div>
 
@@ -179,7 +209,7 @@ export default function EditSchedule({ goBack }) {
             type="button"
             onClick={() => removeClass(idx)}
             style={{
-              marginTop: 4,
+              marginTop: 8,
               padding: "4px 10px",
               background: "#e74c3c",
               color: "white",

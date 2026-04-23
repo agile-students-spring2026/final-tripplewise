@@ -17,18 +17,20 @@ const PREDEFINED = [
   "Auditory Learning",
   "Reading Aloud",
   "Note Taking",
+  "Other",
 ];
 
 const dropdownStyle = {
   width: "100%",
-  height: "40px",
-  borderRadius: "8px",
-  border: "1px solid black",
+  height: "38px",
+  borderRadius: "10px",
+  border: "1px solid #ccc",
   backgroundColor: "white",
   color: "black",
   fontSize: "14px",
   padding: "0 10px",
   cursor: "pointer",
+  boxSizing: "border-box",
 };
 
 // Edit Study Methods – loads from GET /api/users/me, saves via PUT /api/users/me/methods

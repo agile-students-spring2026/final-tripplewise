@@ -99,8 +99,9 @@ app.put("/api/users/me/schedule", authMiddleware, async (req, res) => {
     }
 
     const schedule = payload.map((c, i) => ({
-      id: c.id ?? Date.now() + i,
+      id:   c.id ?? Date.now() + i,
       name: c.name ?? "",
+      day:  c.day  ?? "",
       time: c.time ?? "09:00",
     }));
 
