@@ -51,7 +51,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
       });
       if (response.ok) {
-        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+        setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
         fetchData();
       }
     } catch (err) {
@@ -67,6 +67,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
       });
       if (response.ok) {
         setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
+        fetchData();
       }
     } catch (err) {
       console.error("Error rejecting meeting:", err);
