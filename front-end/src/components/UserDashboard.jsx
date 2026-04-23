@@ -66,7 +66,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
       });
       if (response.ok) {
-        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+        setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
       }
     } catch (err) {
       console.error("Error rejecting meeting:", err);
@@ -217,7 +217,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
               >
                 {studySyncs.map((sync, index) => (
                   <div
-                    key={sync.id}
+                    key={sync._id}
                     style={{
                       padding: "14px 12px",
                       borderBottom:
@@ -278,7 +278,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
               >
                 {meetingRequests.map((request, index) => (
                   <div
-                    key={request.id}
+                    key={request._id}
                     style={{
                       padding: "12px",
                       borderBottom:
@@ -303,7 +303,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
                       }}
                     >
                       <button
-                        onClick={() => handleApproveMeeting(request.id)}
+                        onClick={() => handleApproveMeeting(request._id)}
                         style={{
                           flex: 1,
                           backgroundColor: "#4CAF50",
@@ -318,7 +318,7 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
                         APPROVE
                       </button>
                       <button
-                        onClick={() => handleRejectMeeting(request.id)}
+                        onClick={() => handleRejectMeeting(request._id)}
                         style={{
                           flex: 1,
                           backgroundColor: "#f44336",
