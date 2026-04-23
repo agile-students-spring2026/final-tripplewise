@@ -3,40 +3,80 @@ import BackButton from "./BackButton";
 import { styles } from "../styles";
 
 const HOURS = [
-  "12:00", "12:30", "1:00", "1:30", "2:00", "2:30", "3:00", "3:30", "4:00", "4:30", "5:00", "5:30",
-  "6:00", "6:30", "7:00", "7:30", "8:00", "8:30", "9:00", "9:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "1:00", "1:30", "2:00", "2:30", "3:00", "3:30",
+  "4:00", "4:30", "5:00", "5:30", "6:00", "6:30", "7:00", "7:30",
+  "8:00", "8:30", "9:00", "9:30", "10:00", "10:30", "11:00", "11:30",
 ];
 
-const MAJORS = ["Computer Science", "Mathematics", "Art History", "Physics", "Electrical Engineering", "Finance", "Accounting"];
+const MAJORS = [
+  "Computer Science", "Mathematics", "Art History", "Physics",
+  "Electrical Engineering", "Finance", "Accounting",
+];
 
 const LOCATION_OPTIONS = [
-  "Bobst Library", "Courant Institute", "Tandon School of Engineering", "Brooklyn Campus", "Washington Square Park",
-  "NYU Kimmel Center", "NYU Tisch School of the Arts", "NYU Stern School of Business", "NYU School of Law",
-  "NYU School of Medicine", "NYU Shanghai", "NYU Abu Dhabi", "Other"
+  "Bobst Library", "Courant Institute", "Tandon School of Engineering",
+  "Brooklyn Campus", "Washington Square Park", "NYU Kimmel Center",
+  "NYU Tisch School of the Arts", "NYU Stern School of Business",
+  "NYU School of Law", "NYU School of Medicine", "NYU Shanghai",
+  "NYU Abu Dhabi", "Other",
 ];
 
 const METHOD_OPTIONS = [
-  "Flashcards", "Group Study", "Solo Study", "Teaching Others", "Practice Problems", "Mind Mapping",
-  "Summarization", "Pomodoro Technique", "Active Recall", "Spaced Repetition", "Visual Learning",
-  "Auditory Learning", "Reading Aloud", "Note Taking", "Other"
+  "Flashcards", "Group Study", "Solo Study", "Teaching Others",
+  "Practice Problems", "Mind Mapping", "Summarization", "Pomodoro Technique",
+  "Active Recall", "Spaced Repetition", "Visual Learning", "Auditory Learning",
+  "Reading Aloud", "Note Taking", "Other",
 ];
 
+const card = {
+  backgroundColor: "white",
+  borderRadius: "14px",
+  padding: "16px",
+  marginBottom: "16px",
+  boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+};
+
+const cardTitle = {
+  fontSize: "11px",
+  fontWeight: "700",
+  color: "#999",
+  textTransform: "uppercase",
+  letterSpacing: "1px",
+  marginBottom: "14px",
+};
+
+const fieldLabel = {
+  fontSize: "12px",
+  fontWeight: "600",
+  color: "#555",
+  marginBottom: "4px",
+  display: "block",
+};
+
 const dropdownStyle = {
-  height: "34px",
-  borderRadius: "8px",
-  border: "1px solid black",
+  width: "100%",
+  height: "38px",
+  borderRadius: "10px",
+  border: "1px solid #ccc",
   backgroundColor: "white",
   color: "black",
   fontSize: "14px",
-  padding: "0 6px",
+  padding: "0 10px",
   cursor: "pointer",
-  width: "100%"
+  boxSizing: "border-box",
+};
+
+const inputStyle = {
+  ...styles.input,
+  borderRadius: "10px",
+  border: "1px solid #ccc",
+  fontSize: "14px",
+  height: "38px",
 };
 
 export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
-  const [name, setName] = useState("");
   const [major, setMajor] = useState(MAJORS[0]);
-  
+
   const [classes, setClasses] = useState([
     { name: "", hour: "9:00", period: "AM" },
     { name: "", hour: "9:00", period: "AM" },
@@ -44,37 +84,28 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
     { name: "", hour: "9:00", period: "AM" },
   ]);
 
-  // Stores { selection: "Bobst...", custom: "" }
-  const [locations, setLocations] = useState([{ selection: "", custom: "" }, { selection: "", custom: "" }, { selection: "", custom: "" }]);
-  const [methods, setMethods] = useState([{ selection: "", custom: "" }, { selection: "", custom: "" }]);
+  const [locations, setLocations] = useState([
+    { selection: "", custom: "" },
+    { selection: "", custom: "" },
+    { selection: "", custom: "" },
+  ]);
+
+  const [methods, setMethods] = useState([
+    { selection: "", custom: "" },
+    { selection: "", custom: "" },
+  ]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const saveBg = saving ? "rgba(11,11,11,0.9)" : (styles.mainButton?.backgroundColor || "#0c0c0c");
 
-  const updateClass = (idx, field, value) => {
-    setClasses(prev => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
-      return next;
-    });
-  };
+  const updateClass = (idx, field, value) =>
+    setClasses(prev => { const n = [...prev]; n[idx] = { ...n[idx], [field]: value }; return n; });
 
-  const updateLocation = (idx, field, value) => {
-    setLocations(prev => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
-      return next;
-    });
-  };
+  const updateLocation = (idx, field, value) =>
+    setLocations(prev => { const n = [...prev]; n[idx] = { ...n[idx], [field]: value }; return n; });
 
-  const updateMethod = (idx, field, value) => {
-    setMethods(prev => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
-      return next;
-    });
-  };
+  const updateMethod = (idx, field, value) =>
+    setMethods(prev => { const n = [...prev]; n[idx] = { ...n[idx], [field]: value }; return n; });
 
   async function finishSignup() {
     const token = localStorage.getItem("token");
@@ -96,11 +127,10 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
       .filter(m => m && m.trim());
 
     try {
-      // Basic profile update (Name and Major)
       await fetch("/api/users/me", {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name, major }),
+        body: JSON.stringify({ major }),
       });
 
       if (filledClasses.length > 0) {
@@ -143,101 +173,151 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
 
   return (
     <div style={styles.page}>
+      {/* Top row */}
       <div style={styles.topRow}><BackButton onClick={goBack} /></div>
-      <h1 style={styles.bigTitle}>SET UP PROFILE</h1>
-      {error && <p style={{ color: "red", marginBottom: "12px", textAlign: "center" }}>{error}</p>}
 
-      {/* NAME & MAJOR */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Full Name:</label>
-        <input type="text" style={styles.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" />
+      {/* Title */}
+      <h2 style={{ fontSize: "22px", fontWeight: "800", textAlign: "center", color: "#222", marginBottom: "4px" }}>
+        Set Up Your Profile
+      </h2>
+      <p style={{ fontSize: "13px", color: "#888", textAlign: "center", marginBottom: "6px" }}>
+        Tell us about your studies so we can find your best matches.
+      </p>
+
+      {/* Step indicator */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginBottom: "20px" }}>
+        <div style={{ width: 28, height: 6, borderRadius: 3, backgroundColor: "#ccc" }} />
+        <div style={{ width: 28, height: 6, borderRadius: 3, backgroundColor: "#0c0c0c" }} />
       </div>
 
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Major:</label>
+      {error && (
+        <div style={{ background: "#ffebee", color: "#c62828", padding: "10px 14px", borderRadius: 10, marginBottom: 14, textAlign: "center", fontSize: "13px" }}>
+          ❌ {error}
+        </div>
+      )}
+
+      {/* ── ACADEMIC INFO ── */}
+      <div style={card}>
+        <div style={cardTitle}>🎓 Academic Info</div>
+        <label style={fieldLabel}>Your Major</label>
         <select style={dropdownStyle} value={major} onChange={(e) => setMajor(e.target.value)}>
           {MAJORS.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
 
-      {/* CLASSES */}
-      {classes.map((c, idx) => (
-        <div key={idx} style={{ marginBottom: 14 }}>
-          <div style={styles.doubleInputRow}>
-            <div style={styles.halfInputGroup}>
-              <label style={styles.label}>Class {idx + 1}:</label>
-              <input type="text" style={styles.input} value={c.name} onChange={(e) => updateClass(idx, "name", e.target.value)} placeholder="Class Name" />
-            </div>
-            <div style={styles.halfInputGroup}>
-              <label style={styles.label}>Time:</label>
-              <div style={{ display: "flex", gap: 6 }}>
-                <select value={c.hour} onChange={(e) => updateClass(idx, "hour", e.target.value)} style={{ ...dropdownStyle, flex: 2 }}>
-                  {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-                <select value={c.period} onChange={(e) => updateClass(idx, "period", e.target.value)} style={{ ...dropdownStyle, flex: 1 }}>
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
-              </div>
+      {/* ── CLASSES ── */}
+      <div style={card}>
+        <div style={cardTitle}>📚 Your Classes</div>
+        <p style={{ fontSize: "12px", color: "#aaa", marginBottom: "12px", marginTop: "-8px" }}>
+          Add up to 4 classes with their times.
+        </p>
+        {classes.map((c, idx) => (
+          <div key={idx} style={{ marginBottom: idx < 3 ? "14px" : 0 }}>
+            <label style={fieldLabel}>Class {idx + 1}</label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="text"
+                style={{ ...inputStyle, flex: 2 }}
+                value={c.name}
+                onChange={(e) => updateClass(idx, "name", e.target.value)}
+                placeholder="Class name"
+              />
+              <select
+                value={c.hour}
+                onChange={(e) => updateClass(idx, "hour", e.target.value)}
+                style={{ ...dropdownStyle, flex: 1 }}
+              >
+                {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <select
+                value={c.period}
+                onChange={(e) => updateClass(idx, "period", e.target.value)}
+                style={{ ...dropdownStyle, flex: "0 0 60px" }}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      {/* LOCATIONS */}
-      {locations.map((loc, idx) => (
-        <div key={idx} style={styles.formGroup}>
-          <label style={styles.label}>Study Location {idx + 1}:</label>
-          <select 
-            style={dropdownStyle} 
-            value={loc.selection} 
-            onChange={(e) => updateLocation(idx, "selection", e.target.value)}
-          >
-            <option value="">Select a location</option>
-            {LOCATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-          {loc.selection === "Other" && (
-            <input 
-              type="text" 
-              style={{ ...styles.input, marginTop: "8px" }} 
-              placeholder="Enter custom location" 
-              value={loc.custom} 
-              onChange={(e) => updateLocation(idx, "custom", e.target.value)} 
-            />
-          )}
-        </div>
-      ))}
+      {/* ── STUDY LOCATIONS ── */}
+      <div style={card}>
+        <div style={cardTitle}>📍 Preferred Study Locations</div>
+        <p style={{ fontSize: "12px", color: "#aaa", marginBottom: "12px", marginTop: "-8px" }}>
+          Where do you like to study?
+        </p>
+        {locations.map((loc, idx) => (
+          <div key={idx} style={{ marginBottom: idx < locations.length - 1 ? "12px" : 0 }}>
+            <label style={fieldLabel}>Location {idx + 1}</label>
+            <select
+              style={dropdownStyle}
+              value={loc.selection}
+              onChange={(e) => updateLocation(idx, "selection", e.target.value)}
+            >
+              <option value="">Select a location</option>
+              {LOCATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+            {loc.selection === "Other" && (
+              <input
+                type="text"
+                style={{ ...inputStyle, marginTop: "8px" }}
+                placeholder="Enter custom location"
+                value={loc.custom}
+                onChange={(e) => updateLocation(idx, "custom", e.target.value)}
+              />
+            )}
+          </div>
+        ))}
+      </div>
 
-      {/* METHODS */}
-      {methods.map((meth, idx) => (
-        <div key={idx} style={styles.formGroup}>
-          <label style={styles.label}>Study Method {idx + 1}:</label>
-          <select 
-            style={dropdownStyle} 
-            value={meth.selection} 
-            onChange={(e) => updateMethod(idx, "selection", e.target.value)}
-          >
-            <option value="">Select a method</option>
-            {METHOD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-          {meth.selection === "Other" && (
-            <input 
-              type="text" 
-              style={{ ...styles.input, marginTop: "8px" }} 
-              placeholder="Enter custom method" 
-              value={meth.custom} 
-              onChange={(e) => updateMethod(idx, "custom", e.target.value)} 
-            />
-          )}
-        </div>
-      ))}
+      {/* ── STUDY METHODS ── */}
+      <div style={card}>
+        <div style={cardTitle}>💡 Preferred Study Methods</div>
+        <p style={{ fontSize: "12px", color: "#aaa", marginBottom: "12px", marginTop: "-8px" }}>
+          How do you study best?
+        </p>
+        {methods.map((meth, idx) => (
+          <div key={idx} style={{ marginBottom: idx < methods.length - 1 ? "12px" : 0 }}>
+            <label style={fieldLabel}>Method {idx + 1}</label>
+            <select
+              style={dropdownStyle}
+              value={meth.selection}
+              onChange={(e) => updateMethod(idx, "selection", e.target.value)}
+            >
+              <option value="">Select a method</option>
+              {METHOD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+            {meth.selection === "Other" && (
+              <input
+                type="text"
+                style={{ ...inputStyle, marginTop: "8px" }}
+                placeholder="Enter custom method"
+                value={meth.custom}
+                onChange={(e) => updateMethod(idx, "custom", e.target.value)}
+              />
+            )}
+          </div>
+        ))}
+      </div>
 
+      {/* Finish button */}
       <button
-        style={{ ...styles.mainButton, backgroundColor: saveBg, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.95 : 1 }}
+        style={{
+          ...styles.mainButton,
+          backgroundColor: saving ? "#aaa" : "#4CAF50",
+          borderRadius: "10px",
+          fontWeight: "700",
+          fontSize: "15px",
+          cursor: saving ? "not-allowed" : "pointer",
+          marginTop: "8px",
+          marginBottom: "30px",
+        }}
         onClick={finishSignup}
         disabled={saving}
       >
-        {saving ? "SAVING…" : "FINISH CREATING ACCOUNT"}
+        {saving ? "SAVING…" : "FINISH CREATING ACCOUNT →"}
       </button>
     </div>
   );
