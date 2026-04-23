@@ -38,67 +38,127 @@ app.use("/api/matches", matchesRoutes);
 
 // ===== PROFILE ENDPOINTS =====
 
+const authMiddleware = require("./middleware/authMiddleware");
+const User = require("./models/User");
+
 // GET /api/users/me  – return the logged-in user's full profile
-app.get("/api/users/me", (req, res) => {
-  const user = getCurrentUser();
-  res.json(user);
+app.get("/api/users/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 // PATCH /api/users/me  – update basic account details
-app.patch("/api/users/me", (req, res) => {
-  const { username, firstName, lastName, email, phone, major, year, bio } = req.body || {};
-  const user = getCurrentUser();
-  const updated = {
-    ...user,
-    ...(username !== undefined && { username }),
-    ...(firstName !== undefined && { firstName }),
-    ...(lastName !== undefined && { lastName }),
-    ...(email !== undefined && { email }),
-    ...(phone !== undefined && { phone }),
-    ...(major !== undefined && { major }),
-    ...(year !== undefined && { year }),
-    ...(bio !== undefined && { bio }),
-  };
-  setCurrentUser(updated);
-  res.json({ success: true, user: updated });
+app.patch("/api/users/me", authMiddleware, async (req, res) => {
+  try {
+    const { username, firstName, lastName, email, phone, major, year, bio } = req.body || {};
+
+    const updates = {};
+    if (username !== undefined) updates.username = username;
+    if (firstName !== undefined) updates.firstName = firstName;
+    if (lastName !== undefined) updates.lastName = lastName;
+    if (email !== undefined) updates.email = email;
+    if (phone !== undefined) updates.phone = phone;
+    if (major !== undefined) updates.major = major;
+    if (year !== undefined) updates.year = year;
+    if (bio !== undefined) updates.bio = bio;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      updates,
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 // PUT /api/users/me/schedule  – replace the user's schedule
-app.put("/api/users/me/schedule", (req, res) => {
-  const payload = req.body;
-  if (!Array.isArray(payload)) {
-    return res.status(400).json({ error: "Expected an array of schedule items" });
+app.put("/api/users/me/schedule", authMiddleware, async (req, res) => {
+  try {
+    const payload = req.body;
+
+    if (!Array.isArray(payload)) {
+      return res.status(400).json({ error: "Expected an array of schedule items" });
+    }
+
+    const schedule = payload.map((c, i) => ({
+      id: c.id ?? Date.now() + i,
+      name: c.name ?? "",
+      time: c.time ?? "09:00",
+    }));
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { schedule },
+      { new: true }
+    );
+
+    res.json({ success: true, schedule: user.schedule });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
-  const user = getCurrentUser();
-  const schedule = payload.map((c, i) => ({
-    id: c.id ?? Date.now() + i,
-    name: c.name ?? "",
-    time: c.time ?? "09:00",
-  }));
-  setCurrentUser({ ...user, schedule });
-  res.json({ success: true, schedule });
 });
 
 // PUT /api/users/me/locations  – replace the user's preferred locations
-app.put("/api/users/me/locations", (req, res) => {
-  const { locations } = req.body || {};
-  if (!Array.isArray(locations)) {
-    return res.status(400).json({ error: "Expected { locations: [] }" });
+app.put("/api/users/me/locations", authMiddleware, async (req, res) => {
+  try {
+    const { locations } = req.body;
+
+    if (!Array.isArray(locations)) {
+      return res.status(400).json({ error: "Expected { locations: [] }" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { preferredLocations: locations },
+      { new: true }
+    );
+
+    res.json({ success: true, preferredLocations: user.preferredLocations });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
-  const user = getCurrentUser();
-  setCurrentUser({ ...user, preferredLocations: locations });
-  res.json({ success: true, preferredLocations: locations });
 });
 
 // PUT /api/users/me/methods  – replace the user's preferred study methods
-app.put("/api/users/me/methods", (req, res) => {
-  const { methods } = req.body || {};
-  if (!Array.isArray(methods)) {
-    return res.status(400).json({ error: "Expected { methods: [] }" });
+app.put("/api/users/me/methods", authMiddleware, async (req, res) => {
+  try {
+    const { methods } = req.body;
+
+    if (!Array.isArray(methods)) {
+      return res.status(400).json({ error: "Expected { methods: [] }" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { preferredMethods: methods },
+      { new: true }
+    );
+
+    res.json({ success: true, preferredMethods: user.preferredMethods });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
-  const user = getCurrentUser();
-  setCurrentUser({ ...user, preferredMethods: methods });
-  res.json({ success: true, preferredMethods: methods });
 });
 
 // ===== START SERVER =====

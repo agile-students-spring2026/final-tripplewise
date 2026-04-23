@@ -10,9 +10,12 @@
     "coverage:check": "c8 --reporter=text --reporter=lcov --lines 50 --branches 50 --functions 50 --statements 50 npm test && echo \"Coverage requirement met (50%)\""
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.2.0",
     "mongoose": "^9.5.0"
   },

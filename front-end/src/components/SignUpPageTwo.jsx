@@ -74,6 +74,7 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsern
   }
 
   async function finishSignup() {
+    const token = localStorage.getItem("token");
     setError("");
     setSaving(true);
 
@@ -94,7 +95,10 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsern
       if (filledClasses.length > 0) {
         await fetch("/api/users/me/schedule", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(filledClasses),
         });
       }
@@ -103,7 +107,10 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsern
       if (filledLocations.length > 0) {
         await fetch("/api/users/me/locations", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ locations: filledLocations }),
         });
       }
@@ -112,13 +119,21 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete, initialUsern
       if (filledMethods.length > 0) {
         await fetch("/api/users/me/methods", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ methods: filledMethods }),
         });
       }
 
       // Fetch the updated user to pass back to App
-      const res  = await fetch("/api/users/me");
+      const res  = await fetch("/api/users/me", {
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
       const user = await res.json();
 
       setSaving(false);
