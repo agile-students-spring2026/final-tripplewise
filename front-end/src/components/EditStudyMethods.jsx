@@ -2,27 +2,6 @@ import BackButton from "./BackButton";
 import { useState, useEffect } from "react";
 import { styles } from "../styles";
 
-const checkboxContainer = {
-  display: "flex",
-  alignItems: "center",
-  marginBottom: "12px",
-  padding: "12px",
-  backgroundColor: "white",
-  border: "2px solid #ddd",
-  borderRadius: "8px",
-  cursor: "pointer",
-};
-
-const checkboxBase = {
-  width: "20px",
-  height: "20px",
-  borderRadius: "4px",
-  backgroundColor: "transparent",
-  border: "2px solid #4CAF50",
-  marginRight: "12px",
-  flexShrink: 0,
-};
-
 const PREDEFINED = [
   "Flashcards",
   "Group Study",
@@ -40,38 +19,50 @@ const PREDEFINED = [
   "Note Taking",
 ];
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const dropdownStyle = {
+  width: "100%",
+  height: "40px",
+  borderRadius: "8px",
+  border: "1px solid black",
+  backgroundColor: "white",
+  color: "black",
+  fontSize: "14px",
+  padding: "0 10px",
+  cursor: "pointer",
+};
 
-function getAuthHeader() {
-  const token = localStorage.getItem("authToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
+// Edit Study Methods – loads from GET /api/users/me, saves via PUT /api/users/me/methods
 export default function EditStudyMethods({ goBack }) {
   const [selectedMethods, setSelectedMethods] = useState([]);
+  const [dropdownValue, setDropdownValue] = useState("");
   const [customMethod, setCustomMethod] = useState("");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
 
-  // Load user's current preferred methods
+  // Load user's current preferred methods from DB
   useEffect(() => {
-    fetch(`${API_BASE}/api/profile`, {
-      headers: { ...getAuthHeader() },
+    const token = localStorage.getItem("token");
+    fetch("/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.data.methods)) {
-          setSelectedMethods(data.data.methods);
+        if (Array.isArray(data.preferredMethods)) {
+          setSelectedMethods(data.preferredMethods);
         }
       })
       .catch(() => {});
   }, []);
 
-  const toggle = (method) =>
-    setSelectedMethods((prev) =>
-      prev.includes(method) ? prev.filter((m) => m !== method) : [...prev, method]
-    );
+  // Add method from dropdown
+  const addFromDropdown = () => {
+    if (dropdownValue && !selectedMethods.includes(dropdownValue)) {
+      setSelectedMethods((prev) => [...prev, dropdownValue]);
+      setDropdownValue("");
+    }
+  };
 
+  // Add custom method
   const addCustom = () => {
     const trimmed = customMethod.trim();
     if (trimmed && !selectedMethods.includes(trimmed)) {
@@ -80,30 +71,29 @@ export default function EditStudyMethods({ goBack }) {
     }
   };
 
-  const removeCustom = (method) => {
-    if (!PREDEFINED.includes(method)) {
-      setSelectedMethods((prev) => prev.filter((m) => m !== method));
-    }
+  // Remove any method
+  const removeMethod = (method) => {
+    setSelectedMethods((prev) => prev.filter((m) => m !== method));
   };
 
+  // Save to DB
   const handleSave = () => {
+    const token = localStorage.getItem("token");
     setSaving(true);
     setStatus(null);
-    fetch(`${API_BASE}/api/profile`, {
+    fetch("/api/users/me/methods", {
       method: "PUT",
-      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ methods: selectedMethods }),
     })
       .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          setSaving(false);
-          setStatus("saved");
-          setTimeout(() => goBack(), 800);
-        } else {
-          setSaving(false);
-          setStatus("error");
-        }
+      .then(() => {
+        setSaving(false);
+        setStatus("saved");
+        setTimeout(() => goBack(), 800);
       })
       .catch(() => {
         setSaving(false);
@@ -121,8 +111,8 @@ export default function EditStudyMethods({ goBack }) {
         EDIT PREFERRED STUDY METHODS
       </h2>
 
-      <div style={{ marginBottom: "30px", fontSize: "14px", color: "#666", textAlign: "center", lineHeight: "1.6" }}>
-        Select your preferred study methods. You can choose multiple options.
+      <div style={{ marginBottom: "20px", fontSize: "14px", color: "#666", textAlign: "center", lineHeight: "1.6" }}>
+        Select your preferred study methods from the dropdown. You can add multiple.
       </div>
 
       {status === "saved" && (
@@ -136,31 +126,41 @@ export default function EditStudyMethods({ goBack }) {
         </div>
       )}
 
-      {/* Predefined Methods */}
-      <div style={{ marginBottom: "20px" }}>
-        <div style={styles.label}>Select from popular study methods:</div>
-        {PREDEFINED.map((method) => {
-          const checked = selectedMethods.includes(method);
-          return (
-            <div
-              key={method}
-              style={{
-                ...checkboxContainer,
-                backgroundColor: checked ? "#f0f0f0" : "white",
-                border: `2px solid ${checked ? "#4CAF50" : "#ddd"}`,
-              }}
-              onClick={() => toggle(method)}
-            >
-              <div style={{ ...checkboxBase, ...(checked ? { backgroundColor: "#4CAF50" } : {}) }} />
-              <span style={{ fontSize: "14px", fontWeight: checked ? "bold" : "normal" }}>
-                {method}
-              </span>
-            </div>
-          );
-        })}
+      {/* Dropdown selector */}
+      <div style={styles.formGroup}>
+        <div style={styles.label}>Select a study method:</div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <select
+            value={dropdownValue}
+            onChange={(e) => setDropdownValue(e.target.value)}
+            style={{ ...dropdownStyle, flex: 1 }}
+          >
+            <option value="">-- Choose a method --</option>
+            {PREDEFINED.filter((m) => !selectedMethods.includes(m)).map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <button
+            onClick={addFromDropdown}
+            disabled={!dropdownValue}
+            style={{
+              padding: "8px 14px",
+              backgroundColor: dropdownValue ? "#4CAF50" : "#aaa",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: dropdownValue ? "pointer" : "not-allowed",
+              fontSize: "14px",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Add
+          </button>
+        </div>
       </div>
 
-      {/* Custom Method Input */}
+      {/* Custom method input */}
       <div style={styles.formGroup}>
         <div style={styles.label}>Or type a custom study method:</div>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -175,7 +175,7 @@ export default function EditStudyMethods({ goBack }) {
           <button
             onClick={addCustom}
             style={{
-              padding: "8px 12px",
+              padding: "8px 14px",
               backgroundColor: "#2196F3",
               color: "white",
               border: "none",
@@ -183,6 +183,7 @@ export default function EditStudyMethods({ goBack }) {
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: "bold",
+              whiteSpace: "nowrap",
             }}
           >
             Add
@@ -190,36 +191,51 @@ export default function EditStudyMethods({ goBack }) {
         </div>
       </div>
 
-      {/* Custom (non-predefined) selected methods */}
-      {selectedMethods.filter((m) => !PREDEFINED.includes(m)).length > 0 && (
+      {/* Selected methods as removable tags */}
+      {selectedMethods.length > 0 && (
         <div style={{ marginBottom: "20px" }}>
-          <div style={styles.label}>Your custom study methods:</div>
-          {selectedMethods
-            .filter((m) => !PREDEFINED.includes(m))
-            .map((method) => (
+          <div style={styles.label}>Your selected methods:</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
+            {selectedMethods.map((method) => (
               <div
                 key={method}
-                style={{ ...checkboxContainer, backgroundColor: "#f0f0f0", border: "2px solid #4CAF50" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  padding: "6px 12px",
+                  borderRadius: "20px",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                }}
               >
-                <div style={{ ...checkboxBase, backgroundColor: "#4CAF50" }} />
-                <span style={{ fontSize: "14px", fontWeight: "bold" }}>{method}</span>
+                <span>{method}</span>
                 <button
-                  onClick={() => removeCustom(method)}
+                  onClick={() => removeMethod(method)}
                   style={{
-                    marginLeft: "auto",
-                    padding: "4px 8px",
-                    backgroundColor: "#f44336",
-                    color: "white",
+                    background: "none",
                     border: "none",
-                    borderRadius: "4px",
+                    color: "white",
                     cursor: "pointer",
-                    fontSize: "12px",
+                    fontSize: "16px",
+                    lineHeight: "1",
+                    padding: "0",
+                    fontWeight: "bold",
                   }}
                 >
-                  Remove
+                  ×
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {selectedMethods.length === 0 && (
+        <div style={{ padding: "16px", border: "1px dashed #ccc", borderRadius: "8px", textAlign: "center", color: "#999", marginBottom: "20px", fontSize: "13px" }}>
+          No methods selected yet. Use the dropdown above to add some.
         </div>
       )}
 
