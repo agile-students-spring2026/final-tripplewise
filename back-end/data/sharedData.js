@@ -22,24 +22,7 @@ let studySyncs = [
   },
 ];
 
-let meetingRequests = [
-  {
-    id: 1,
-    fromUser: "Sarah_Smith",
-    date: "1/1/2026",
-    time: "12:30 PM",
-    location: "Bobst LL2",
-    status: "pending"
-  },
-  {
-    id: 2,
-    fromUser: "Mike_Johnson",
-    date: "1/2/2026",
-    time: "2:00 PM",
-    location: "NYU Library",
-    status: "pending"
-  }
-];
+let meetingRequests = [];
 
 function getStudySyncs() {
   return studySyncs;

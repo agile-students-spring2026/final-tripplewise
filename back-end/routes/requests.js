@@ -14,7 +14,10 @@ router.get("/", authMiddleware, async (req, res) => {
     const allRequests = getMeetingRequests();
     const userRequests = allRequests.filter((r) => r.toUser === username);
 
-    res.json(userRequests);
+    // Normalize: ensure each request has both id and _id for frontend compatibility
+    const normalized = userRequests.map((r) => ({ ...r, _id: r._id || r.id }));
+
+    res.json(normalized);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
