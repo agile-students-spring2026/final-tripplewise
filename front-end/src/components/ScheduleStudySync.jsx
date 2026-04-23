@@ -2,6 +2,10 @@ import React, { useState, useMemo, useEffect } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
+function getAuthHeader() {
+  const token = localStorage.getItem("authToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function ScheduleStudySync({ goBack }) {
@@ -98,7 +102,9 @@ export default function ScheduleStudySync({ goBack }) {
 
     fetch(`${API_BASE}/api/syncs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+       ...getAuthHeader(),
+      },
       body: JSON.stringify(payload),
     })
       .then((r) => {

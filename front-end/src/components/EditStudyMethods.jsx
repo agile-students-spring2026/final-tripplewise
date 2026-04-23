@@ -40,7 +40,13 @@ const PREDEFINED = [
   "Note Taking",
 ];
 
-// Edit Study Methods – loads from GET /api/users/me, saves via PUT /api/users/me/methods
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
+function getAuthHeader() {
+  const token = localStorage.getItem("authToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function EditStudyMethods({ goBack }) {
   const [selectedMethods, setSelectedMethods] = useState([]);
   const [customMethod, setCustomMethod] = useState("");
@@ -49,11 +55,13 @@ export default function EditStudyMethods({ goBack }) {
 
   // Load user's current preferred methods
   useEffect(() => {
-    fetch("/api/users/me")
+    fetch(`${API_BASE}/api/profile`, {
+      headers: { ...getAuthHeader() },
+    })
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data.preferredMethods)) {
-          setSelectedMethods(data.preferredMethods);
+        if (data.success && Array.isArray(data.data.methods)) {
+          setSelectedMethods(data.data.methods);
         }
       })
       .catch(() => {});
@@ -81,16 +89,21 @@ export default function EditStudyMethods({ goBack }) {
   const handleSave = () => {
     setSaving(true);
     setStatus(null);
-    fetch("/api/users/me/methods", {
+    fetch(`${API_BASE}/api/profile`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
       body: JSON.stringify({ methods: selectedMethods }),
     })
       .then((r) => r.json())
-      .then(() => {
-        setSaving(false);
-        setStatus("saved");
-        setTimeout(() => goBack(), 800);
+      .then((data) => {
+        if (data.success) {
+          setSaving(false);
+          setStatus("saved");
+          setTimeout(() => goBack(), 800);
+        } else {
+          setSaving(false);
+          setStatus("error");
+        }
       })
       .catch(() => {
         setSaving(false);

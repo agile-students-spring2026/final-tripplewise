@@ -1,15 +1,18 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const syncsRouter = require("./routes/syncs");
 const matchesRouter = require("./routes/matches");
 const requestsRouter = require("./routes/requests");
-const syncsRouter = require("./routes/syncs");
-const authRouter = require("./routes/auth");
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // mount routers
+app.use("/api/profile", profileRouter);
 app.use("/api/matches", matchesRouter);
 app.use("/api/requests", requestsRouter);
 app.use("/api/syncs", syncsRouter);

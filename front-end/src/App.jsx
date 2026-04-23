@@ -85,7 +85,7 @@ export default function App() {
 
       {page === "userProfile" && (
         <Profile
-          user={currentUser}            
+          currentUser={currentUser}
           goBack={() => setPage("dashboard")}
           onEditSchedule={() => setPage("editSchedule")}
           onEditLocations={() => setPage("editLocations")}
