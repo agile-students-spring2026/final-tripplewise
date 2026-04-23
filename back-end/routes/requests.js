@@ -10,9 +10,11 @@ router.get("/", authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.userId).select("username");
     const username = user?.username || "";
 
-    // Only return requests where toUser matches the logged-in user
+    // Only return requests where toUser matches the logged-in user (case-insensitive)
     const allRequests = getMeetingRequests();
-    const userRequests = allRequests.filter((r) => r.toUser === username);
+    const userRequests = allRequests.filter(
+      (r) => r.toUser && r.toUser.toLowerCase() === username.toLowerCase()
+    );
 
     // Normalize: ensure each request has both id and _id for frontend compatibility
     const normalized = userRequests.map((r) => ({ ...r, _id: r._id || r.id }));
@@ -42,10 +44,11 @@ router.post("/", authMiddleware, async (req, res) => {
     const newRequest = {
       id: Math.max(...meetingRequests.map((r) => r.id), 0) + 1,
       fromUser: fromUsername,
-      toUser: toUsername,
+      toUser: toUsername,   // stored as-is; GET filter is case-insensitive
       date,
       time,
       location,
+      message: req.body.message || "",
       status: "pending",
     };
 
