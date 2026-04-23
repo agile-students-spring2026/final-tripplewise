@@ -92,10 +92,6 @@ export default function EditAccountDetails({ goBack, onLogout }) {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
 
-  // Password change state
-  const [pwData, setPwData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  const [pwSaving, setPwSaving] = useState(false);
-  const [pwStatus, setPwStatus] = useState(null); // "saved" | "error" | string
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -145,49 +141,6 @@ export default function EditAccountDetails({ goBack, onLogout }) {
       .catch(() => {
         setSaving(false);
         setStatus("error");
-      });
-  };
-
-  const handlePasswordChange = () => {
-    const { currentPassword, newPassword, confirmPassword } = pwData;
-    setPwStatus(null);
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPwStatus("All password fields are required");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPwStatus("New password must be at least 6 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPwStatus("New passwords do not match");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    setPwSaving(true);
-    fetch("/api/users/me/password", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setPwSaving(false);
-        if (data.success) {
-          setPwStatus("saved");
-          setPwData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-        } else {
-          setPwStatus(data.error || "Failed to update password");
-        }
-      })
-      .catch(() => {
-        setPwSaving(false);
-        setPwStatus("Could not connect to server");
       });
   };
 
@@ -314,9 +267,9 @@ export default function EditAccountDetails({ goBack, onLogout }) {
           <div style={sectionCard}>
             <div style={sectionTitle}>🎓 Academic Information</div>
 
-            <div style={{ display: "flex", gap: "10px", marginBottom: "4px" }}>
-              <div style={{ flex: 2 }}>
-                <label style={fieldLabel}>Major</label>
+            <div style={{ display: "flex", gap: "10px", marginBottom: "4px", justifyContent: "center" }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ ...fieldLabel, textAlign: "center" }}>Major</label>
                 <select
                   value={formData.major}
                   onChange={(e) => handleInputChange("major", e.target.value)}
@@ -329,7 +282,7 @@ export default function EditAccountDetails({ goBack, onLogout }) {
                 <Hint field="major" />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={fieldLabel}>Year</label>
+                <label style={{ ...fieldLabel, textAlign: "center" }}>Year</label>
                 <select
                   value={formData.year}
                   onChange={(e) => handleInputChange("year", e.target.value)}
@@ -363,74 +316,6 @@ export default function EditAccountDetails({ goBack, onLogout }) {
               placeholder="Share your interests, study preferences, or anything else you'd like potential study partners to know…"
             />
             <Hint field="bio" />
-          </div>
-
-          {/* ── CHANGE PASSWORD ── */}
-          <div style={sectionCard}>
-            <div style={sectionTitle}>🔒 Change Password</div>
-
-            <div style={{ marginBottom: "12px" }}>
-              <label style={fieldLabel}>Current Password</label>
-              <input
-                type="password"
-                value={pwData.currentPassword}
-                onChange={(e) => setPwData((p) => ({ ...p, currentPassword: e.target.value }))}
-                style={inputStyle}
-                placeholder="Enter current password"
-              />
-            </div>
-
-            <div style={{ marginBottom: "12px" }}>
-              <label style={fieldLabel}>New Password</label>
-              <input
-                type="password"
-                value={pwData.newPassword}
-                onChange={(e) => setPwData((p) => ({ ...p, newPassword: e.target.value }))}
-                style={inputStyle}
-                placeholder="At least 6 characters"
-              />
-            </div>
-
-            <div style={{ marginBottom: "12px" }}>
-              <label style={fieldLabel}>Confirm New Password</label>
-              <input
-                type="password"
-                value={pwData.confirmPassword}
-                onChange={(e) => setPwData((p) => ({ ...p, confirmPassword: e.target.value }))}
-                style={inputStyle}
-                placeholder="Repeat new password"
-              />
-            </div>
-
-            {/* Password status */}
-            {pwStatus === "saved" && (
-              <div style={{ background: "#e8f5e9", color: "#2e7d32", padding: "8px 12px", borderRadius: 8, marginBottom: 10, fontSize: "13px", fontWeight: "600" }}>
-                ✅ Password updated!
-              </div>
-            )}
-            {pwStatus && pwStatus !== "saved" && (
-              <div style={{ background: "#ffebee", color: "#c62828", padding: "8px 12px", borderRadius: 8, marginBottom: 10, fontSize: "13px" }}>
-                ❌ {pwStatus}
-              </div>
-            )}
-
-            <button
-              onClick={handlePasswordChange}
-              disabled={pwSaving}
-              style={{
-                width: "100%",
-                backgroundColor: pwSaving ? "#aaa" : "#0c0c0c",
-                color: "white",
-                border: "none",
-                padding: "10px",
-                borderRadius: "10px",
-                fontSize: "13px",
-                fontWeight: "700",
-                cursor: pwSaving ? "not-allowed" : "pointer",
-              }}
-            >
-              {pwSaving ? "UPDATING…" : "UPDATE PASSWORD"}
-            </button>
           </div>
 
           {/* ── SAVE / LOGOUT ── */}

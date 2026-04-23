@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { styles } from "../styles";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
+function getAuthHeader() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOrganizeSyncs }) {
   const [studySyncs, setStudySyncs] = useState([]);
   const [meetingRequests, setMeetingRequests] = useState([]);
@@ -8,15 +15,21 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
 
   const fetchData = useCallback(async () => {
     try {
-      // Fetch confirmed study syncs
-      const syncsRes = await fetch("/api/syncs");
+      // Fetch confirmed study syncs (auth required — returns only user's syncs)
+      const syncsRes = await fetch(`${API_BASE}/api/syncs`, {
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      });
       const syncsData = await syncsRes.json();
-      setStudySyncs(syncsData.data || []);
-      
-      // Fetch pending meeting requests
-      const requestsRes = await fetch("/api/requests");
+      // syncs route now returns array directly (filtered by user)
+      setStudySyncs(Array.isArray(syncsData) ? syncsData : []);
+
+      // Fetch pending meeting requests (auth required — returns only requests TO this user)
+      const requestsRes = await fetch(`${API_BASE}/api/requests`, {
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      });
       const requestsData = await requestsRes.json();
-      setMeetingRequests(requestsData.data || []);
+      // requests route now returns array directly (filtered by user)
+      setMeetingRequests(Array.isArray(requestsData) ? requestsData : []);
     } catch (err) {
       console.error(err);
     }
@@ -33,15 +46,13 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
 
   const handleApproveMeeting = async (id) => {
     try {
-      const response = await fetch(`/api/requests/${id}/approve`, {
+      const response = await fetch(`${API_BASE}/api/requests/${id}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
       });
-      
       if (response.ok) {
-        // Remove from meeting requests and refresh both lists
-        setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
-        fetchData(); // Refresh syncs list
+        setMeetingRequests(meetingRequests.filter((req) => req.id !== id));
+        fetchData();
       }
     } catch (err) {
       console.error("Error approving meeting:", err);
@@ -50,11 +61,10 @@ export default function UserDashboard({ onLogout, onFindMatches, onProfile, onOr
 
   const handleRejectMeeting = async (id) => {
     try {
-      const response = await fetch(`/api/requests/${id}/reject`, {
+      const response = await fetch(`${API_BASE}/api/requests/${id}/reject`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
       });
-      
       if (response.ok) {
         setMeetingRequests(meetingRequests.filter((req) => req._id !== id));
       }

@@ -1,111 +1,135 @@
 const express = require("express");
 const router = express.Router();
-const MeetingRequest = require("../models/MeetingRequest");
-const StudySync = require("../models/StudySync");
+const authMiddleware = require("../middleware/authMiddleware");
+const User = require("../models/User");
+const { getStudySyncs, setStudySyncs, getMeetingRequests, setMeetingRequests } = require("../data/sharedData");
 
-// GET /api/requests - retrieve all pending meeting requests
-router.get("/", async (req, res) => {
+// GET /api/requests - retrieve pending meeting requests sent TO the logged-in user
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const meetingRequests = await MeetingRequest.find({ status: "pending" });
-    res.json({
-      success: true,
-      data: meetingRequests
-    });
+    const user = await User.findById(req.user.userId).select("username");
+    const username = user?.username || "";
+
+    // Only return requests where toUser matches the logged-in user
+    const allRequests = getMeetingRequests();
+    const userRequests = allRequests.filter((r) => r.toUser === username);
+
+    res.json(userRequests);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch requests" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// POST /api/requests - create a new meeting request
-router.post("/", async (req, res) => {
-  const { toUserId, date, time, location, message, fromUser } = req.body;
-  
-  if (!toUserId || !date || !time || !location) {
-    return res.status(400).json({ 
-      error: "Missing required fields: toUserId, date, time, location" 
-    });
-  }
-  
+// POST /api/requests - send a match/meeting request to another user
+router.post("/", authMiddleware, async (req, res) => {
   try {
-    const newRequest = new MeetingRequest({
-      fromUser: fromUser || "CurrentUser",
-      toUser: toUserId,
+    const { toUserId, toUsername, date, time, location } = req.body;
+
+    if (!toUsername || !date || !time || !location) {
+      return res.status(400).json({
+        error: "Missing required fields: toUsername, date, time, location",
+      });
+    }
+
+    const fromUser = await User.findById(req.user.userId).select("username");
+    const fromUsername = fromUser?.username || "unknown";
+
+    const meetingRequests = getMeetingRequests();
+    const newRequest = {
+      id: Math.max(...meetingRequests.map((r) => r.id), 0) + 1,
+      fromUser: fromUsername,
+      toUser: toUsername,
       date,
       time,
       location,
-      message: message || "",
-      status: "pending"
-    });
-    
-    await newRequest.save();
-    
+      status: "pending",
+    };
+
+    meetingRequests.push(newRequest);
+    setMeetingRequests(meetingRequests);
+
     res.status(201).json({
       success: true,
       message: "Meeting request sent",
-      data: newRequest
+      data: newRequest,
     });
   } catch (err) {
-    res.status(500).json({ error: "Failed to create request" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // POST /api/requests/:id/approve - approve a meeting request
-router.post("/:id/approve", async (req, res) => {
+router.post("/:id/approve", authMiddleware, async (req, res) => {
   try {
-    const request = await MeetingRequest.findById(req.params.id);
-    
-    if (!request) {
+    const requestId = parseInt(req.params.id);
+    const user = await User.findById(req.user.userId).select("username");
+    const username = user?.username || "";
+
+    const meetingRequests = getMeetingRequests();
+    const requestIndex = meetingRequests.findIndex((r) => r.id === requestId);
+
+    if (requestIndex === -1) {
       return res.status(404).json({ error: "Request not found" });
     }
-    
-    // Create a new confirmed study sync from the approved request
-    const newSync = new StudySync({
+
+    const request = meetingRequests[requestIndex];
+    const studySyncs = getStudySyncs();
+
+    // Create a confirmed study sync from the approved request
+    const newSync = {
+      id: Math.max(...studySyncs.map((s) => s.id), 0) + 1,
       title: `Study with ${request.fromUser}`,
       datetime: `${request.date} ${request.time}`,
       location: request.location,
       message: "Confirmed study sync",
-      members: ["you", request.fromUser],
+      members: [username, request.fromUser],
       maxMembers: 5,
-      createdBy: request.toUser,
-      status: "active"
-    });
-    
-    await newSync.save();
-    
-    // Update request status to approved
-    request.status = "approved";
-    await request.save();
-    
+      status: "active",
+    };
+
+    studySyncs.push(newSync);
+    setStudySyncs(studySyncs);
+
+    // Remove from pending
+    meetingRequests.splice(requestIndex, 1);
+    setMeetingRequests(meetingRequests);
+
     res.json({
       success: true,
       message: "Meeting request approved and sync created",
-      data: newSync
+      data: newSync,
     });
   } catch (err) {
-    res.status(500).json({ error: "Failed to approve request" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // POST /api/requests/:id/reject - reject a meeting request
-router.post("/:id/reject", async (req, res) => {
+router.post("/:id/reject", authMiddleware, async (req, res) => {
   try {
-    const request = await MeetingRequest.findById(req.params.id);
-    
-    if (!request) {
+    const requestId = parseInt(req.params.id);
+    const meetingRequests = getMeetingRequests();
+    const requestIndex = meetingRequests.findIndex((r) => r.id === requestId);
+
+    if (requestIndex === -1) {
       return res.status(404).json({ error: "Request not found" });
     }
-    
-    // Update request status to rejected
-    request.status = "rejected";
-    await request.save();
-    
+
+    const rejectedRequest = meetingRequests[requestIndex];
+    meetingRequests.splice(requestIndex, 1);
+    setMeetingRequests(meetingRequests);
+
     res.json({
       success: true,
       message: "Meeting request rejected",
-      data: request
+      data: rejectedRequest,
     });
   } catch (err) {
-    res.status(500).json({ error: "Failed to reject request" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

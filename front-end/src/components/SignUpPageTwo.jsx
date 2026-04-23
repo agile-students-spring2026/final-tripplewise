@@ -78,10 +78,10 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
   const [major, setMajor] = useState(MAJORS[0]);
 
   const [classes, setClasses] = useState([
-    { name: "", hour: "9:00", period: "AM" },
-    { name: "", hour: "9:00", period: "AM" },
-    { name: "", hour: "9:00", period: "AM" },
-    { name: "", hour: "9:00", period: "AM" },
+    { name: "", day: "", hour: "9:00", period: "AM" },
+    { name: "", day: "", hour: "9:00", period: "AM" },
+    { name: "", day: "", hour: "9:00", period: "AM" },
+    { name: "", day: "", hour: "9:00", period: "AM" },
   ]);
 
   const [locations, setLocations] = useState([
@@ -115,6 +115,7 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
     const filledClasses = classes.filter(c => c.name.trim()).map((c, i) => ({
       id: Date.now() + i,
       name: c.name.trim(),
+      day: c.day || "",
       time: `${c.hour} ${c.period}`,
     }));
 
@@ -212,31 +213,56 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
           Add up to 4 classes with their times.
         </p>
         {classes.map((c, idx) => (
-          <div key={idx} style={{ marginBottom: idx < 3 ? "14px" : 0 }}>
+          <div key={idx} style={{ marginBottom: idx < 3 ? "16px" : 0 }}>
             <label style={fieldLabel}>Class {idx + 1}</label>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <input
-                type="text"
-                style={{ ...inputStyle, flex: 2 }}
-                value={c.name}
-                onChange={(e) => updateClass(idx, "name", e.target.value)}
-                placeholder="Class name"
-              />
-              <select
-                value={c.hour}
-                onChange={(e) => updateClass(idx, "hour", e.target.value)}
-                style={{ ...dropdownStyle, flex: 1 }}
-              >
-                {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
-              <select
-                value={c.period}
-                onChange={(e) => updateClass(idx, "period", e.target.value)}
-                style={{ ...dropdownStyle, flex: "0 0 60px" }}
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
+            {/* Class name */}
+            <input
+              type="text"
+              style={{ ...inputStyle, width: "100%", marginBottom: "6px" }}
+              value={c.name}
+              onChange={(e) => updateClass(idx, "name", e.target.value)}
+              placeholder="Class name"
+            />
+            {/* Day + Time row */}
+            <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+              <div style={{ flex: 2 }}>
+                <label style={{ ...fieldLabel, fontSize: 11, color: "#aaa" }}>📅 Day</label>
+                <select
+                  value={c.day}
+                  onChange={(e) => updateClass(idx, "day", e.target.value)}
+                  style={{ ...dropdownStyle, width: "100%" }}
+                >
+                  <option value="">Select day</option>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                  <option value="Sunday">Sunday</option>
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ ...fieldLabel, fontSize: 11, color: "#aaa" }}>🕐 Time</label>
+                <select
+                  value={c.hour}
+                  onChange={(e) => updateClass(idx, "hour", e.target.value)}
+                  style={{ ...dropdownStyle, width: "100%" }}
+                >
+                  {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: "0 0 64px" }}>
+                <label style={{ ...fieldLabel, fontSize: 11, color: "#aaa" }}>AM/PM</label>
+                <select
+                  value={c.period}
+                  onChange={(e) => updateClass(idx, "period", e.target.value)}
+                  style={{ ...dropdownStyle, width: "100%" }}
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
             </div>
           </div>
         ))}

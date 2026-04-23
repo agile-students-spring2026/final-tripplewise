@@ -50,16 +50,18 @@ function calculateMatchPercentage(user1, user2) {
 
 /**
  * Calculate schedule overlap percentage
- * Returns 0-100 based on common time slots
+ * Returns 0-100 based on common days
+ * Supports both new format { day, time } and old format { time: "Monday 2:00 PM" }
  */
 function calculateScheduleOverlap(schedule1, schedule2) {
   if (!schedule1?.length || !schedule2?.length) return 0;
 
   let matches = 0;
   schedule1.forEach(item1 => {
+    const day1 = item1.day || extractDay(item1.time);
     schedule2.forEach(item2 => {
-      // Simple match: check if day and time are similar
-      if (extractDay(item1.time) === extractDay(item2.time)) {
+      const day2 = item2.day || extractDay(item2.time);
+      if (day1 && day2 && day1 === day2) {
         matches++;
       }
     });

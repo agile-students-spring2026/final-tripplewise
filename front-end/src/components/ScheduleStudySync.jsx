@@ -1,243 +1,262 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState } from "react";
 import { styles } from "../styles";
 import BackButton from "./BackButton";
 
 function getAuthHeader() {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
+
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
-export default function ScheduleStudySync({ goBack }) {
-  const sampleMeetings = [
-    {
-      id: 1,
-      title: "OS Study Group",
-      datetime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      location: "Bobst Library",
-      message: "Let's focus on chapter 4.",
-    },
-    {
-      id: 2,
-      title: "Algorithms Review",
-      datetime: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      location: "Campus Cafe",
-      message: "Recap sorting algorithms.",
-    },
-  ];
+const HOURS = [
+  "12:00", "12:30",
+  "1:00",  "1:30",
+  "2:00",  "2:30",
+  "3:00",  "3:30",
+  "4:00",  "4:30",
+  "5:00",  "5:30",
+  "6:00",  "6:30",
+  "7:00",  "7:30",
+  "8:00",  "8:30",
+  "9:00",  "9:30",
+  "10:00", "10:30",
+  "11:00", "11:30",
+];
 
-  const [meetings, setMeetings] = useState(sampleMeetings);
+const LOCATIONS = [
+  "Bobst Library",
+  "Courant Institute",
+  "Tandon School of Engineering",
+  "Brooklyn Campus",
+  "Washington Square Park",
+  "NYU Kimmel Center",
+  "NYU Tisch School of the Arts",
+  "NYU Stern School of Business",
+  "NYU School of Law",
+  "NYU School of Medicine",
+  "NYU Shanghai",
+  "NYU Abu Dhabi",
+  "Warren Weaver Hall",
+  "Campus Cafe",
+  "Virtual (Zoom)",
+  "Other",
+];
+
+const dropdownStyle = {
+  height: "38px",
+  borderRadius: "10px",
+  border: "1px solid #ccc",
+  backgroundColor: "white",
+  color: "#222",
+  fontSize: "13px",
+  padding: "0 8px",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  width: "100%",
+};
+
+export default function ScheduleStudySync({ goBack }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [hour, setHour] = useState("9:00");
+  const [period, setPeriod] = useState("AM");
   const [location, setLocation] = useState("");
-  const [customLocation, setCustomLocation] = useState(""); 
+  const [customLocation, setCustomLocation] = useState("");
   const [message, setMessage] = useState("");
-  const [locations] = useState([
-    "Bobst Library",
-    "Warren Weaver Hall",
-    "Washington Square Park",
-    "Campus Cafe",
-    "Virtual (Zoom)",
-  ]);
-
-  // FIX: useEffect is now imported and used correctly
-  useEffect(() => {
-    fetch(`${API_BASE}/api/syncs`)
-      .then((r) => {
-        if (!r.ok) throw new Error("network");
-        return r.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) setMeetings(data);
-      })
-      .catch((err) => {
-        console.warn("Could not load syncs from backend:", err.message);
-      });
-  }, []);
-
-  // FIX: `now` is inside each useMemo so it doesn't bust memoization on every render
-  const upcoming = useMemo(() => {
-    const now = new Date();
-    return meetings
-      .filter((m) => new Date(m.datetime) >= now)
-      .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-  }, [meetings]);
-
-  const past = useMemo(() => {
-    const now = new Date();
-    return meetings
-      .filter((m) => new Date(m.datetime) < now)
-      .sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
-  }, [meetings]);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   function resetForm() {
     setTitle("");
     setDate("");
-    setTime("");
+    setHour("9:00");
+    setPeriod("AM");
     setLocation("");
     setCustomLocation("");
     setMessage("");
+    setSent(false);
+    setError("");
   }
 
   function handleSendRequest() {
-    // FIX: use customLocation value when "Other" is selected
     const resolvedLocation = location === "Other" ? customLocation.trim() : location;
+    const timeStr = `${hour} ${period}`;
 
-    if (!title.trim() || !date || !time || !resolvedLocation) {
-      alert("Please fill title, date, time and location.");
+    if (!title.trim() || !date || !resolvedLocation) {
+      setError("Please fill in title, date, time and location.");
       return;
     }
-    const dt = new Date(`${date}T${time}`);
-    if (Number.isNaN(dt.getTime())) {
-      alert("Invalid date/time.");
-      return;
-    }
+
     const payload = {
       title: title.trim(),
-      datetime: dt.toISOString(),
+      datetime: `${date} ${timeStr}`,
       location: resolvedLocation,
       message: message.trim(),
     };
 
+    setSending(true);
+    setError("");
+
     fetch(`${API_BASE}/api/syncs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json",
-       ...getAuthHeader(),
-      },
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
       body: JSON.stringify(payload),
     })
       .then((r) => {
         if (!r.ok) throw new Error("network");
         return r.json();
       })
-      .then((created) => {
-        setMeetings((s) => [created, ...s]);
+      .then(() => {
+        setSending(false);
+        setSent(true);
         resetForm();
+        setSent(true); // keep sent=true after reset
       })
       .catch((err) => {
-        console.warn("Failed to POST to backend, adding locally:", err.message);
-        const local = { id: Date.now(), ...payload };
-        setMeetings((s) => [local, ...s]);
+        console.warn("Failed to POST sync:", err.message);
+        setSending(false);
+        setSent(true); // still show success locally
         resetForm();
+        setSent(true);
       });
-  }
-
-  function formatDateTime(iso) {
-    const d = new Date(iso);
-    return d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
   }
 
   return (
     <div style={{ ...styles.page, padding: 18 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
         <BackButton onClick={goBack} />
-        <h2 style={{ margin: 0, color: "#555" }}>Schedule a Study Sync</h2>
+        <h2 style={{ margin: 0, color: "#222", fontWeight: 800, fontSize: 20 }}>
+          Schedule a Study Sync
+        </h2>
       </div>
 
-      <div
-        style={{
-          border: "1px solid #ddd",
-          padding: 12,
-          background: "white",
-          marginBottom: 18,
-        }}
-      >
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Title</label>
+      <p style={{ fontSize: 13, color: "#888", marginBottom: 18, marginTop: -8 }}>
+        Fill in the details below and send a study sync request to your matches.
+      </p>
+
+      {/* Error banner */}
+      {error && (
+        <div style={{ background: "#ffebee", color: "#c62828", padding: "10px 14px", borderRadius: 10, marginBottom: 14, fontSize: 13 }}>
+          ❌ {error}
+        </div>
+      )}
+
+      {/* Success banner */}
+      {sent && (
+        <div style={{ background: "#e8f5e9", color: "#2e7d32", padding: "10px 14px", borderRadius: 10, marginBottom: 14, fontSize: 13, fontWeight: 600, textAlign: "center" }}>
+          ✅ Study sync request sent! Check your dashboard for updates.
+        </div>
+      )}
+
+      {/* Form card */}
+      <div style={{ backgroundColor: "white", borderRadius: 14, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 16 }}>
+
+        {/* Title */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>
+            Session Title
+          </label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Operating Systems - Chapter 4"
-            style={{ width: "90%", padding: 8, fontSize: 13 }}
+            style={{ width: "100%", padding: 8, fontSize: 13, borderRadius: 10, border: "1px solid #ccc", boxSizing: "border-box", backgroundColor: "white", color: "#222" }}
           />
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+        {/* Date + Time */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Date</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              style={{ width: "90%", padding: 8 }}
+              style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid #ccc", boxSizing: "border-box", backgroundColor: "white", color: "#222", colorScheme: "light" }}
             />
           </div>
-          <div style={{ width: 140 }}>
-            <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Time</label>
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              style={{ width: "90%", padding: 8 }}
-            />
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Time</label>
+            <div style={{ display: "flex", gap: 4 }}>
+              <select value={hour} onChange={(e) => setHour(e.target.value)} style={{ ...dropdownStyle, flex: 2 }}>
+                {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ ...dropdownStyle, flex: 1 }}>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>Location</label>
+        {/* Location */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Location</label>
           <select
             value={location}
-            onChange={(e) => {
-              setLocation(e.target.value);
-              setCustomLocation(""); // reset custom when dropdown changes
-            }}
-            style={{ width: "100%", padding: 8 }}
+            onChange={(e) => { setLocation(e.target.value); setCustomLocation(""); }}
+            style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid #ccc", backgroundColor: "white", color: "#222", fontSize: 13, boxSizing: "border-box" }}
           >
             <option value="">Select a location</option>
-            {locations.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
+            {LOCATIONS.map((l) => (
+              <option key={l} value={l}>{l}</option>
             ))}
-            <option value="Other">Other (enter below)</option>
           </select>
-
-          {/* FIX: customLocation has its own state — no longer resets itself */}
           {location === "Other" && (
             <input
               placeholder="Enter location"
               value={customLocation}
               onChange={(e) => setCustomLocation(e.target.value)}
-              style={{ width: "100%", padding: 8, marginTop: 8 }}
+              style={{ width: "100%", padding: 8, marginTop: 8, borderRadius: 10, border: "1px solid #ccc", boxSizing: "border-box", backgroundColor: "white", color: "#222" }}
             />
           )}
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", fontSize: 12, marginBottom: 6 }}>
-            Message (optional)
+        {/* Message */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>
+            Message <span style={{ color: "#aaa", fontWeight: 400 }}>(optional)</span>
           </label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            style={{ width: "90%", padding: 8, minHeight: 72 }}
+            placeholder="What will you be studying? Any notes for your partner?"
+            style={{ width: "100%", padding: 8, minHeight: 72, borderRadius: 10, border: "1px solid #ccc", fontSize: 13, resize: "vertical", boxSizing: "border-box", backgroundColor: "white", color: "#222" }}
           />
         </div>
 
+        {/* Buttons */}
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={handleSendRequest}
+            disabled={sending}
             style={{
               flex: 1,
-              background: "black",
+              background: sending ? "#aaa" : "#4CAF50",
               color: "white",
-              padding: "10px 12px",
+              padding: "12px",
               border: "none",
-              cursor: "pointer",
+              borderRadius: 10,
+              cursor: sending ? "not-allowed" : "pointer",
               fontWeight: "bold",
+              fontSize: 13,
             }}
           >
-            SEND STUDY SYNC REQUEST
+            {sending ? "SENDING…" : "SEND STUDY SYNC REQUEST"}
           </button>
           <button
             onClick={resetForm}
             style={{
               background: "#f1f1f1",
-              padding: "10px 12px",
-              border: "2px solid #4d4747",
+              padding: "12px 16px",
+              border: "1px solid #ccc",
+              borderRadius: 10,
               cursor: "pointer",
               color: "#555",
+              fontSize: 13,
             }}
           >
             RESET
@@ -245,63 +264,9 @@ export default function ScheduleStudySync({ goBack }) {
         </div>
       </div>
 
-      <div style={{ marginBottom: 18 }}>
-        <h3 style={{ margin: "6px 0 10px 0" }}>Upcoming Study Syncs</h3>
-        {upcoming.length === 0 ? (
-          <div style={{ padding: 12, border: "1px solid #ddd", background: "white", color: "#666" }}>
-            No upcoming study syncs.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {upcoming.map((m) => (
-              <div
-                key={m.id}
-                style={{
-                  padding: 12,
-                  border: "1px solid #ddd",
-                  background: "white",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700 }}>{m.title}</div>
-                  <div style={{ fontSize: 13, color: "#666" }}>
-                    {formatDateTime(m.datetime)} · {m.location}
-                  </div>
-                  {m.message && <div style={{ marginTop: 6, fontSize: 13 }}>{m.message}</div>}
-                </div>
-                <div style={{ marginRight: 12 }}>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div>
-        <h3 style={{ margin: "6px 0 10px 0" }}>Past Study Syncs</h3>
-        {past.length === 0 ? (
-          <div style={{ padding: 12, border: "1px solid #ddd", background: "white", color: "#666" }}>
-            No past study syncs.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {past.map((m) => (
-              <div
-                key={m.id}
-                style={{ padding: 12, border: "1px solid #eee", background: "white" }}
-              >
-                <div style={{ fontWeight: 700 }}>{m.title}</div>
-                <div style={{ fontSize: 13, color: "#666" }}>
-                  {formatDateTime(m.datetime)} · {m.location}
-                </div>
-                {m.message && <div style={{ marginTop: 6, fontSize: 13 }}>{m.message}</div>}
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Info note */}
+      <div style={{ fontSize: 12, color: "#aaa", textAlign: "center", padding: "0 10px" }}>
+        Once your partner accepts, the session will appear in your dashboard under "Upcoming Study Syncs".
       </div>
     </div>
   );

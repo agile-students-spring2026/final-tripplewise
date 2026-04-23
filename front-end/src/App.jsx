@@ -13,7 +13,6 @@ import EditStudyMethods from "./components/EditStudyMethods";
 import EditAccountDetails from "./components/EditAccountDetails";
 import ScheduleStudySync from "./components/ScheduleStudySync";
 import SyncCompleted from "./components/SyncCompleted";
-import StudySyncMeetings from "./components/StudySyncMeetings";
 import { styles } from "./styles";
 
 export default function App() {
@@ -137,13 +136,6 @@ export default function App() {
 
       {page === "syncCompleted" && (
         <SyncCompleted onBackToDashboard={() => setPage("dashboard")} />
-      )}
-
-      {page === "syncMatch" && (
-        <StudySyncMeetings
-          onBack={() => setPage("dashboard")}
-          onSendRequest={() => setPage("syncCompleted")}
-        />
       )}
 
     </div>

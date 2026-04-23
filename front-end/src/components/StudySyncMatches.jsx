@@ -4,6 +4,11 @@ import BackButton from "./BackButton";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
+function getAuthHeader() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function StudySyncMatches({ onBack, onViewProfile }) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +17,9 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/matches`)
+    fetch(`${API_BASE}/api/matches`, {
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    })
       .then((r) => r.json())
       .then((data) => {
         if (!cancelled) setMatches(Array.isArray(data.data) ? data.data : data);
