@@ -10,79 +10,129 @@ export const styles = {
 
   page: {
     width: "393px",
-    minHeight: "852px",
-    backgroundColor: "#e9e9e9",
-    color: "black",
-    padding: "20px",
-    boxSizing: "border-box"
+    minHeight: "852px", // Changed from height to minHeight
+    backgroundColor: "var(--bg)",
+    color: "var(--text)",
+    padding: "40px 24px",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    borderRadius: "44px",
+    boxShadow: "var(--shadow)",
+    position: "relative",
+    overflowY: "auto", // Allow vertical scrolling if content overflows
+    msOverflowStyle: "none", 
+    scrollbarWidth: "none" 
   },
 
   topRow: {
-    marginBottom: "20px"
+    width: "100%",
+    display: "flex",
+    justifyContent: "flex-start",
+    marginBottom: "32px"
   },
 
   backButton: {
     width: "48px",
     height: "48px",
-    backgroundColor: "black",
+    backgroundColor: "var(--text-h)",
     color: "white",
     border: "none",
-    fontSize: "28px",
-    cursor: "pointer"
+    borderRadius: "12px",
+    fontSize: "24px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
   },
 
   bigTitle: {
-    textAlign: "center",
-    fontSize: "40px",
-    marginBottom: "30px",
-    color: "#555"
+    fontSize: "36px",
+    fontWeight: "800",
+    color: "var(--text-h)",
+    letterSpacing: "-1.5px",
+    marginBottom: "32px",
+    textAlign: "center"
   },
 
-  stepsBox: {
-    textAlign: "center",
-    fontSize: "14px",
-    lineHeight: "2.6",
-    marginBottom: "30px"
+  illustrationPlaceholder: {
+    width: "90%",
+    height: "50%", 
+    minHeight: "350px",
+    backgroundColor: "#ffffff", 
+    margin: "10px auto 30px auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "24px",
+    border: "2px dashed #bbb",
+    boxSizing: "border-box"
   },
 
   formGroup: {
-    marginBottom: "16px"
+    width: "100%",
+    marginBottom: "28px"
   },
 
   label: {
     display: "block",
-    fontSize: "14px",
-    marginBottom: "6px",
-    textTransform: "uppercase"
+    fontSize: "12px",
+    fontWeight: "700",
+    color: "var(--text-h)",
+    marginBottom: "10px",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px"
   },
 
   input: {
     width: "100%",
-    height: "34px",
-    borderRadius: "12px",
-    border: "1px solid black",
-    padding: "8px",
+    height: "50px",
+    borderRadius: "14px",
+    border: "1px solid var(--border)",
+    padding: "0 16px",
     boxSizing: "border-box",
     backgroundColor: "white",
-    color: "black"
+    fontSize: "16px",
+    color: "var(--text-h)"
   },
 
   mainButton: {
     width: "100%",
-    backgroundColor: "black",
+    backgroundColor: "var(--accent)",
     color: "white",
     border: "none",
-    padding: "18px 12px",
+    borderRadius: "16px",
+    padding: "18px",
     fontSize: "16px",
-    marginTop: "18px",
-    cursor: "pointer"
+    fontWeight: "600",
+    cursor: "pointer",
+    marginTop: "12px",
+    boxShadow: "0 8px 16px -4px rgba(170, 59, 255, 0.3)",
+    flexShrink: 0 // Prevent button from squishing
+  },
+
+  secondaryButton: {
+    width: "100%",
+    backgroundColor: "var(--accent)",
+    color: "white",
+    border: "none",
+    borderRadius: "16px",
+    padding: "18px",
+    fontSize: "16px",
+    fontWeight: "600",
+    cursor: "pointer",
+    marginTop: "12px",
+    opacity: "0.85",
+    flexShrink: 0
   },
 
   doubleInputRow: {
     display: "flex",
-    gap: "16px",
+    gap: "20px",
     width: "100%",
-    marginBottom: "12px"
+    marginBottom: "28px"
   },
 
   halfInputGroup: {
@@ -91,97 +141,36 @@ export const styles = {
     flexDirection: "column"
   },
 
-  uploadBox: {
+  infoBox: {
     width: "100%",
-    height: "110px",
-    border: "1px solid #aaa",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "3rem",
-    fontWeight: "bold",
-    backgroundColor: "#f5f5f5",
-    marginTop: "8px",
-    marginBottom: "8px",
-    cursor: "pointer"
+    borderRadius: "16px",
+    border: "1px solid var(--border)",
+    backgroundColor: "white",
+    padding: "20px",
+    minHeight: "120px",
+    marginTop: "12px",
+    boxSizing: "border-box"
   },
 
   profileImageBox: {
-    width: "160px",
-    height: "160px",
-    backgroundColor: "#d9d9d9",
+    width: "140px",
+    height: "140px",
+    borderRadius: "70px",
+    backgroundColor: "var(--border)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "1.2rem",
-    fontWeight: "700",
-    margin: "8px auto 20px auto",
-    boxSizing: "border-box"
+    margin: "0 auto 24px auto"
   },
 
-  usernameBox: {
-    width: "100%",
-    border: "1px solid black",
-    backgroundColor: "white",
+  footer: {
+    marginTop: "auto",
+    paddingTop: "40px",
+    paddingBottom: "20px",
+    fontSize: "12px",
+    color: "var(--text)",
+    opacity: 0.7,
     textAlign: "center",
-    padding: "12px",
-    fontSize: "1.1rem",
-    marginBottom: "16px",
-    boxSizing: "border-box"
-  },
-
-  profileSectionLabel: {
-    display: "block",
-    fontSize: "14px",
-    marginBottom: "8px",
-    textTransform: "uppercase"
-  },
-
-  infoBox: {
-    width: "100%",
-    border: "1px solid black",
-    backgroundColor: "white",
-    padding: "12px",
-    minHeight: "110px",
-    marginTop: "8px",
-    boxSizing: "border-box"
-  },
-
-  infoText: {
-    margin: "0 0 14px 0",
-    fontSize: "1rem",
-    lineHeight: "1.25"
-  },
-
-  matchText: {
-    textAlign: "center",
-    fontSize: "2rem",
-    fontWeight: "bold",
-    margin: "20px 0"
-  },
-
-  messageBox: {
-    width: "100%",
-    minHeight: "120px",
-    border: "1px solid black",
-    backgroundColor: "white",
-    padding: "12px",
-    fontSize: "1rem",
-    resize: "none",
-    color: "black",
-    marginTop: "8px",
-    boxSizing: "border-box"
-  },
-
-  profileActionButton: {
-    width: "100%",
-    backgroundColor: "black",
-    color: "white",
-    border: "none",
-    padding: "14px 12px",
-    fontSize: "16px",
-    marginTop: "18px",
-    cursor: "pointer",
-    boxSizing: "border-box"
+    flexShrink: 0
   }
 };
