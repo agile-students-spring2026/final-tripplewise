@@ -20,7 +20,7 @@ describe("Syncs API", () => {
     const syncs = res.body.data;
     if (syncs.length > 0) {
       const sync = syncs[0];
-      expect(sync).to.have.property("id");
+      expect(sync).to.have.property("_id");
       expect(sync).to.have.property("title");
       expect(sync).to.have.property("datetime");
       expect(sync).to.have.property("location");
@@ -43,7 +43,7 @@ describe("Syncs API", () => {
     expect(res).to.have.status(201);
     expect(res.body).to.have.property("success", true);
     expect(res.body).to.have.property("data");
-    expect(res.body.data).to.have.property("id");
+    expect(res.body.data).to.have.property("_id");
     expect(res.body.data).to.have.property("title", "Test Study Group");
     expect(res.body.data).to.have.property("status", "active");
   });

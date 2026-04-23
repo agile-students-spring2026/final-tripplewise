@@ -20,7 +20,7 @@ describe("Requests API", () => {
     const requests = res.body.data;
     if (requests.length > 0) {
       const req = requests[0];
-      expect(req).to.have.property("id");
+      expect(req).to.have.property("_id");
       expect(req).to.have.property("fromUser");
       expect(req).to.have.property("date");
       expect(req).to.have.property("time");
@@ -41,7 +41,7 @@ describe("Requests API", () => {
     expect(res).to.have.status(201);
     expect(res.body).to.have.property("success", true);
     expect(res.body).to.have.property("data");
-    expect(res.body.data).to.have.property("id");
+    expect(res.body.data).to.have.property("_id");
     expect(res.body.data).to.have.property("date", "4/20/2026");
     expect(res.body.data).to.have.property("status", "pending");
   });
