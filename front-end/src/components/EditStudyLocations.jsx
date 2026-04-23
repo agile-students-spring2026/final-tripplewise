@@ -47,7 +47,10 @@ export default function EditStudyLocations({ goBack }) {
 
   // Load user's current preferred locations
   useEffect(() => {
-    fetch("/api/users/me")
+    const token = localStorage.getItem("token");
+    fetch("/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data.preferredLocations)) {
@@ -77,11 +80,15 @@ export default function EditStudyLocations({ goBack }) {
   };
 
   const handleSave = () => {
+    const token = localStorage.getItem("token");
     setSaving(true);
     setStatus(null);
     fetch("/api/users/me/locations", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ locations: selectedLocations }),
     })
       .then((r) => r.json())
