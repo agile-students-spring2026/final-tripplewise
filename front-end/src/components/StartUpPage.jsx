@@ -4,16 +4,33 @@ import { styles } from "../styles";
 export default function StartUpPage({ onLogin, onSignUp }) {
   return (
     <div style={styles.page}>
-      <h1 style={styles.bigTitle}>Study Sync</h1>
+      <h1 style={{
+        ...styles.bigTitle,
+        fontFamily: "'Playfair Display', serif",
+        fontStyle: "italic",
+        color: "#08060d",
+        fontSize: "44px",
+        letterSpacing: "-1px",
+      }}>
+        Study Sync
+      </h1>
 
-      {/* The Welcome Graphic Box */}
-      <div style={styles.illustrationPlaceholder}>
-        <span style={{ color: "#888", fontWeight: "600" }}>
-          [ Welcome Graphic ]
-        </span>
-        <p style={{ color: "#aaa", fontSize: "0.8rem", marginTop: "8px" }}>
-          Illustration Space
-        </p>
+      {/* The Welcome Graphic */}
+      <div style={{
+        width: "100%",
+        borderRadius: "16px",
+        marginBottom: "20px",
+        overflow: "hidden",
+        backgroundColor: "white",
+      }}>
+        <img
+          src="/welcome-graphic.png"
+          alt="Welcome to Study Sync"
+          style={{
+            width: "100%",
+            display: "block",
+          }}
+        />
       </div>
 
       <div style={{ width: "100%", padding: "0 6px", boxSizing: "border-box" }}>
