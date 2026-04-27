@@ -63,6 +63,12 @@ export default function SignUpPageOne({ goNext, goBack }) {
         <BackButton onClick={goBack} />
       </div>
 
+      <img
+        src="/Graphic image.png"
+        alt="Welcome to Study Sync"
+        style={{ width: "100%", borderRadius: "16px", marginBottom: "20px" }}
+      />
+
       <h1 style={styles.bigTitle}>SIGN UP</h1>
 
       <div style={styles.stepsBox}>
