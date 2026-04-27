@@ -41,12 +41,6 @@ export default function LoginPage({ goBack, onLogin }) {
         <BackButton onClick={goBack} />
       </div>
 
-      <img
-        src="/welcome-graphic.png"
-        alt="Welcome to Study Sync"
-        style={{ width: "100%", borderRadius: "16px", marginBottom: "20px" }}
-      />
-
       <h1 style={styles.bigTitle}>Login</h1>
       <p style={{ ...styles.label, textAlign: "center", marginBottom: "30px" }}>
         Welcome back, enter your credentials below to login.

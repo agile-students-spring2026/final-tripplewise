@@ -1,49 +1,67 @@
 /**
  * Calculate match percentage between two users
  * Database-agnostic: accepts user objects, doesn't fetch from database
- * 
+ *
  * Based on:
  * - Schedule overlap (40%)
  * - Location compatibility (30%)
  * - Method compatibility (20%)
  * - Subject overlap (10%)
- * 
- * @param {Object} user1 - First user profile with schedule, preferredLocations, preferredMethods
- * @param {Object} user2 - Second user profile with schedule, preferredLocations, preferredMethods
+ *
+ * If a factor cannot be calculated (missing data on either side),
+ * its weight is redistributed proportionally among the remaining factors.
+ *
+ * @param {Object} user1 - First user profile
+ * @param {Object} user2 - Second user profile
  * @returns {number} Match percentage (0-100)
  */
 function calculateMatchPercentage(user1, user2) {
   if (!user1 || !user2) return 0;
-  
-  let matchScore = 0;
+
+  const factors = [];
 
   // 1. Schedule Overlap (40% weight)
-  const scheduleMatch = calculateScheduleOverlap(
-    user1.schedule,
-    user2.schedule
-  );
-  matchScore += scheduleMatch * 0.4;
+  const hasSchedule = user1.schedule?.length && user2.schedule?.length;
+  if (hasSchedule) {
+    factors.push({
+      score: calculateScheduleOverlap(user1.schedule, user2.schedule),
+      weight: 0.4,
+    });
+  }
 
   // 2. Location Compatibility (30% weight)
-  const locationMatch = calculateLocationMatch(
-    user1.preferredLocations,
-    user2.preferredLocations
-  );
-  matchScore += locationMatch * 0.3;
+  const hasLocations = user1.preferredLocations?.length && user2.preferredLocations?.length;
+  if (hasLocations) {
+    factors.push({
+      score: calculateLocationMatch(user1.preferredLocations, user2.preferredLocations),
+      weight: 0.3,
+    });
+  }
 
   // 3. Method Compatibility (20% weight)
-  const methodMatch = calculateMethodMatch(
-    user1.preferredMethods,
-    user2.preferredMethods
-  );
-  matchScore += methodMatch * 0.2;
+  const hasMethods = user1.preferredMethods?.length && user2.preferredMethods?.length;
+  if (hasMethods) {
+    factors.push({
+      score: calculateMethodMatch(user1.preferredMethods, user2.preferredMethods),
+      weight: 0.2,
+    });
+  }
 
   // 4. Subject/Class Overlap (10% weight)
-  const subjectMatch = calculateSubjectOverlap(
-    user1.schedule,
-    user2.schedule
-  );
-  matchScore += subjectMatch * 0.1;
+  const hasSubjects = user1.schedule?.length && user2.schedule?.length;
+  if (hasSubjects) {
+    factors.push({
+      score: calculateSubjectOverlap(user1.schedule, user2.schedule),
+      weight: 0.1,
+    });
+  }
+
+  // If no factors available, return 0
+  if (factors.length === 0) return 0;
+
+  // Redistribute weights proportionally so they always sum to 1
+  const totalWeight = factors.reduce((sum, f) => sum + f.weight, 0);
+  const matchScore = factors.reduce((sum, f) => sum + f.score * (f.weight / totalWeight), 0);
 
   return Math.round(matchScore);
 }

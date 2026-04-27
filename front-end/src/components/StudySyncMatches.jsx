@@ -31,7 +31,6 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
     return () => { cancelled = true; };
   }, []);
 
-  // Filter logic
   const filteredMatches = useMemo(() => {
     if (filterBy === "all") return matches;
     if (filterBy === "location") return matches.filter((m) => m.preferredLocations?.includes("Bobst Library"));
@@ -39,124 +38,173 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
     return matches;
   }, [matches, filterBy]);
 
-  // Sort logic
   const sortedMatches = useMemo(() => {
     const sorted = [...filteredMatches];
-    if (sortBy === "match") sorted.sort((a, b) => b.matchPercentage - a.matchPercentage);
-    else if (sortBy === "name") sorted.sort((a, b) => a.username.localeCompare(b.username));
-    else if (sortBy === "location") sorted.sort((a, b) => (a.preferredLocations?.[0] || "").localeCompare(b.preferredLocations?.[0] || ""));
+    if (sortBy === "match") {
+      sorted.sort((a, b) => b.matchPercentage - a.matchPercentage);
+    } else if (sortBy === "location") {
+      sorted.sort((a, b) => {
+        const aHas = (a.preferredLocations?.length || 0) > 0 ? 1 : 0;
+        const bHas = (b.preferredLocations?.length || 0) > 0 ? 1 : 0;
+        if (bHas !== aHas) return bHas - aHas;
+        return b.matchPercentage - a.matchPercentage;
+      });
+    } else if (sortBy === "method") {
+      sorted.sort((a, b) => {
+        const aHas = (a.preferredMethods?.length || 0) > 0 ? 1 : 0;
+        const bHas = (b.preferredMethods?.length || 0) > 0 ? 1 : 0;
+        if (bHas !== aHas) return bHas - aHas;
+        return b.matchPercentage - a.matchPercentage;
+      });
+    }
     return sorted;
   }, [filteredMatches, sortBy]);
 
-  if (loading) return <div style={styles.page}>Loading matches…</div>;
+  const selectStyle = {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #e5e4e7",
+    borderRadius: "10px",
+    backgroundColor: "white",
+    color: "#08060d",
+    fontSize: "13px",
+    cursor: "pointer",
+    appearance: "none",
+    boxSizing: "border-box",
+  };
+
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#bbb", fontSize: "14px" }}>
+          ⏳ Finding your matches…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
-      {/* Header with Back Button */}
-      <div style={{ display: "flex", alignItems: "center", marginBottom: "24px", gap: "16px" }}>
+
+      {/* ── HEADER ── */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "20px", gap: "14px", width: "100%" }}>
         <BackButton onClick={onBack} />
-        <h1 style={{ fontSize: "24px", fontWeight: "bold", margin: 0, letterSpacing: "0.1em", color: "#555" }}>
-          STUDY SYNC<br />MATCHES
-        </h1>
+        <div>
+          <p style={{ fontSize: "11px", color: "#aaa", margin: "0 0 2px 0", fontWeight: "600", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+            Discover
+          </p>
+          <h1 style={{ fontSize: "24px", fontWeight: "800", margin: 0, color: "var(--text-h)", letterSpacing: "-0.5px" }}>
+            Study Matches
+          </h1>
+        </div>
       </div>
 
-      {/* Filter and Sort Controls */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+      {/* ── FILTER & SORT ── */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", width: "100%" }}>
         <div style={{ flex: 1 }}>
-          <label style={{ display: "block", fontSize: "11px", fontWeight: "bold", marginBottom: "6px", letterSpacing: "0.05em" }}>
-            FILTER BY:
+          <label style={{ display: "block", fontSize: "11px", fontWeight: "700", marginBottom: "6px", color: "#888", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Filter
           </label>
-          <select
-            value={filterBy}
-            onChange={(e) => setFilterBy(e.target.value)}
-            style={{ width: "100%", padding: "8px", border: "1px solid black", backgroundColor: "white", color: "black", fontSize: "12px", cursor: "pointer" }}
-          >
+          <select value={filterBy} onChange={(e) => setFilterBy(e.target.value)} style={selectStyle}>
             <option value="all">All Matches</option>
             <option value="location">Bobst LL2</option>
             <option value="method">In-Person</option>
           </select>
         </div>
-
         <div style={{ flex: 1 }}>
-          <label style={{ display: "block", fontSize: "11px", fontWeight: "bold", marginBottom: "6px", letterSpacing: "0.05em" }}>
-            SORT BY:
+          <label style={{ display: "block", fontSize: "11px", fontWeight: "700", marginBottom: "6px", color: "#888", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Sort By
           </label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{ width: "100%", padding: "8px", border: "1px solid black", backgroundColor: "white", color: "black", fontSize: "12px", cursor: "pointer" }}
-          >
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={selectStyle}>
             <option value="match">% Match</option>
-            <option value="name">Username</option>
             <option value="location">Location</option>
+            <option value="method">Study Method</option>
           </select>
         </div>
       </div>
 
-      {/* Loading state */}
-      {loading && (
-        <div style={{ textAlign: "center", color: "#666", padding: "24px" }}>Loading matches…</div>
-      )}
+      {/* ── RESULTS COUNT ── */}
+      <p style={{ fontSize: "12px", color: "#aaa", fontWeight: "600", marginBottom: "12px", width: "100%" }}>
+        {sortedMatches.length} match{sortedMatches.length !== 1 ? "es" : ""} found
+      </p>
 
-      {/* Matches List */}
-      {!loading && (
-        <div style={{ marginBottom: "16px" }}>
-          {sortedMatches.length > 0 ? (
-            sortedMatches.map((match) => (
-              <button
-                key={match.id}
-                onClick={() => onViewProfile?.(match)}
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  marginBottom: "12px",
-                  padding: "12px",
-                  border: "1px solid #ddd",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                  width: "100%",
-                  boxSizing: "border-box",
-                  alignItems: "flex-start",
-                }}
-              >
-                {/* Profile Placeholder */}
-                <div style={{
-                  width: "60px", height: "60px", backgroundColor: "#e0e0e0",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "11px", fontWeight: "bold", flexShrink: 0, color: "#999",
-                }}>
-                  PROFILE
+      {/* ── MATCHES LIST ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", marginBottom: "20px" }}>
+        {sortedMatches.length > 0 ? sortedMatches.map((match) => {
+          const pct = match.matchPercentage || 0;
+          const barColor = pct >= 75 ? "#4CAF50" : pct >= 50 ? "#aa3bff" : "#f59e0b";
+
+          return (
+            <button
+              key={match.id}
+              onClick={() => onViewProfile?.(match)}
+              style={{
+                display: "flex",
+                gap: "14px",
+                padding: "14px 16px",
+                backgroundColor: "white",
+                border: "none",
+                borderRadius: "16px",
+                cursor: "pointer",
+                width: "100%",
+                boxSizing: "border-box",
+                alignItems: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                textAlign: "left",
+              }}
+            >
+              {/* Avatar */}
+              <div style={{
+                width: "52px",
+                height: "52px",
+                borderRadius: "14px",
+                backgroundColor: "var(--accent-bg)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "22px",
+                flexShrink: 0,
+              }}>
+                🎓
+              </div>
+
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-h)", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {match.firstName} {match.lastName}
                 </div>
-
-                {/* Match Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "13px", fontWeight: "bold", marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {match.firstName} {match.lastName}
+                <div style={{ fontSize: "12px", color: "#888", marginBottom: "6px" }}>
+                  {match.major} · {match.year}
+                </div>
+                {/* Match bar */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ flex: 1, height: "5px", backgroundColor: "#f0f0f5", borderRadius: "10px", overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", backgroundColor: barColor, borderRadius: "10px" }} />
                   </div>
-                  <div style={{ fontSize: "11px", lineHeight: "1.5", color: "#333" }}>
-                    <div><strong>Major:</strong> {match.major}</div>
-                    <div><strong>Year:</strong> {match.year}</div>
-                    <div><strong>% Match:</strong> {match.matchPercentage}%</div>
-                  </div>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: barColor, whiteSpace: "nowrap" }}>
+                    {pct}% match
+                  </span>
                 </div>
+              </div>
 
-                {/* Add Button */}
-                <div style={{
-                  backgroundColor: "black", color: "white", border: "none",
-                  padding: "8px 12px", fontSize: "10px", fontWeight: "bold",
-                  cursor: "pointer", whiteSpace: "nowrap", height: "fit-content", alignSelf: "center",
-                }}>
-                  ADD
-                </div>
-              </button>
-            ))
-          ) : (
-            <div style={{ border: "1px solid #ddd", padding: "24px", textAlign: "center", fontSize: "14px", color: "#666", backgroundColor: "white" }}>
-              No matches found. Try adjusting your filters.
-            </div>
-          )}
-        </div>
-      )}
+              {/* Arrow */}
+              <div style={{ color: "#ccc", fontSize: "18px", flexShrink: 0 }}>›</div>
+            </button>
+          );
+        }) : (
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "16px",
+            padding: "40px 20px",
+            textAlign: "center",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+          }}>
+            <div style={{ fontSize: "40px", marginBottom: "12px" }}>🔍</div>
+            <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-h)", marginBottom: "6px" }}>No matches found</div>
+            <div style={{ fontSize: "12px", color: "#aaa" }}>Try adjusting your filters to see more results.</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
