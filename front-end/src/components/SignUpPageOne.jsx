@@ -64,7 +64,7 @@ export default function SignUpPageOne({ goNext, goBack }) {
       </div>
 
       <img
-        src="/Graphic image.png"
+        src="/welcome-graphic.png"
         alt="Welcome to Study Sync"
         style={{ width: "100%", borderRadius: "16px", marginBottom: "20px" }}
       />
