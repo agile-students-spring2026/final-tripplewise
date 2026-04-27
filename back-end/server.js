@@ -171,6 +171,22 @@ app.put("/api/users/me/password", authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/users/me  – permanently delete the logged-in user's account
+app.delete("/api/users/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ success: true, message: "Account deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // PUT /api/users/me/methods  – replace the user's preferred study methods
 app.put("/api/users/me/methods", authMiddleware, async (req, res) => {
   try {

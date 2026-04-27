@@ -354,8 +354,22 @@ export default function EditAccountDetails({ goBack, onLogout }) {
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-                  console.log("Delete account clicked");
-                  goBack();
+                  const token = localStorage.getItem("token");
+                  fetch("/api/users/me", {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${token}` },
+                  })
+                    .then((r) => r.json())
+                    .then((data) => {
+                      if (data.success) {
+                        localStorage.removeItem("token");
+                        if (typeof onLogout === "function") onLogout();
+                        else goBack();
+                      } else {
+                        alert("Failed to delete account: " + (data.error || "Unknown error"));
+                      }
+                    })
+                    .catch(() => alert("Failed to delete account. Please try again."));
                 }
               }}
               style={{
