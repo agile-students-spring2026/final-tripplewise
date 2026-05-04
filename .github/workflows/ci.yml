@@ -23,7 +23,7 @@ jobs:
           node-version: 20
 
       - name: Install backend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run backend tests
         run: npm test
@@ -44,7 +44,7 @@ jobs:
           node-version: 20
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build frontend
         run: npm run build
