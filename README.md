@@ -24,7 +24,15 @@ This project follows a team-based contribution model. Please refer to our [CONTR
 Instructions for testing and building this project will be provided as the project progress. 
 
 ## Building and Testing
-*Information will be added once basic setup is complete.*
+On every push or pull request to the `master` branch, the following steps are executed:
+
+#### Backend (`back-end`)
+- Install dependencies using `npm install`
+- Run automated tests using `npm test` (Mocha + Chai)
+
+#### Frontend (`front-end`)
+- Install dependencies using `npm install`
+- Build the application using `npm run build`
 
 ## Additional Links
 
