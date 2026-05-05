@@ -34,99 +34,94 @@ On every push or pull request to the `master` branch, the following steps are ex
 - Install dependencies using `npm install`
 - Build the application using `npm run build`
 
-## Docker Setup with Docker Compose
+## Live Demo
 
-TrippleWise can be run entirely using Docker and Docker Compose for local development and testing.
+| Service | URL |
+|---------|-----|
+| Frontend | http://161.35.51.3:5173 |
+| Backend API | http://161.35.51.3:3001 |
 
-### Prerequisites
-- [Docker](https://www.docker.com/products/docker-desktop) installed and running
-- [Docker Compose](https://docs.docker.com/compose/install/) installed (included with Docker Desktop)
+---
 
-### Quick Start
+## Running with Docker
 
-1. **Start all services (MongoDB, Backend, Frontend):**
+StudySync uses Docker and Docker Compose to run all three services — MongoDB, the Express backend, and the Nginx-served React frontend — together in an isolated environment.
+
+---
+
+### What You Need
+
+| Tool | Purpose |
+|------|---------|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop) | Runs and manages containers |
+| [Docker Compose](https://docs.docker.com/compose/install/) | Orchestrates multi-container setup (bundled with Docker Desktop) |
+
+---
+
+### Step 1 — Set Up Your Environment File
+
+Create a `.env` file in the project root and set the following values:
+
+| Variable | Description |
+|----------|-------------|
+| `MONGODB_URI` | MongoDB connection string (leave blank to use the local container) |
+| `JWT_SECRET` | A long, random secret string for signing JWTs |
+| `NODE_ENV` | Set to `production` for Docker runs |
+
+---
+
+### Step 2 — Build and Start All Services
+
 ```bash
-docker-compose up -d
+docker compose up --build -d
 ```
 
-This command will:
-- Build the backend image (Node 22-alpine)
-- Build the frontend image (Node 22-alpine → Nginx)
-- Start MongoDB 7.0 with persistent storage
-- Start the backend server on port `3001`
-- Start the frontend (Nginx) on port `5173`
+This single command will:
+- Build the **backend** image (Node 22-alpine)
+- Build the **frontend** image (Node 22-alpine → Nginx)
+- Pull and start **MongoDB 7.0** with a persistent named volume
+- Wire all three services together on a private Docker network
 
-2. **Access the application:**
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:3001`
-- MongoDB: `localhost:27017` (credentials: `admin`/`password`)
+---
 
-3. **View logs:**
+### Step 3 — Open the App
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:3001 |
+| MongoDB | `localhost:27017` (user: `admin`, password: value from `.env`) |
+
+---
+
+### Useful Commands
+
 ```bash
-# All services
-docker-compose logs -f
+# Stream logs for all services
+docker compose logs -f
 
-# Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f mongo
+# Stream logs for a single service
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f mongo
+
+# Stop containers (data is preserved)
+docker compose down
+
+# Stop containers AND delete all stored data
+docker compose down -v
+
+# Rebuild a single service after a code change
+docker compose up --build -d backend
 ```
 
-4. **Stop services (keep data):**
-```bash
-docker-compose down
-```
-
-5. **Stop and clean up everything (delete MongoDB data):**
-```bash
-docker-compose down -v
-```
-
-### Architecture
-
-- **MongoDB** (`mongo:7.0`): Database service, stores study syncs, meeting requests, and user profiles
-- **Backend** (`Node 22-alpine`): Express.js API server, runs on port 3001 with hot-reload (`npm run dev`)
-- **Frontend** (`Node 22-alpine + Nginx`): Vite React app built and served via Nginx on port 5173
-- **Data Persistence**: MongoDB data is stored in `./mongo-data/` directory (persists between `up`/`down` cycles)
-
-### Environment Variables
-
-Edit `docker-compose.yml` to customize:
-- `MONGODB_URI`: MongoDB connection string (default: `mongodb://admin:password@mongo:27017/tripplewise?authSource=admin`)
-- `JWT_SECRET`: JWT signing secret (change in production)
-- `NODE_ENV`: `development` or `production`
-
-### Building and Pushing to Docker Hub
-
-1. **Build images locally:**
-```bash
-docker build -f back-end/Dockerfile -t tripplewise-backend:latest .
-docker build -f front-end/Dockerfile -t tripplewise-frontend:latest .
-```
-
-2. **Tag images with your Docker Hub username:**
-```bash
-docker tag tripplewise-backend:latest yourusername/tripplewise-backend:latest
-docker tag tripplewise-frontend:latest yourusername/tripplewise-frontend:latest
-```
-
-3. **Login and push to Docker Hub:**
-```bash
-docker login
-docker push yourusername/tripplewise-backend:latest
-docker push yourusername/tripplewise-frontend:latest
-```
-
-4. **Verify on Docker Hub:**
-Visit `https://hub.docker.com/r/yourusername/tripplewise-backend` and `https://hub.docker.com/r/yourusername/tripplewise-frontend`
+---
 
 ### Troubleshooting
 
-- **Slow MongoDB pull on first run**: This is normal. Subsequent `docker-compose up` commands reuse the `./mongo-data/` volume for fast startup.
-- **Port already in use**: If ports 3001, 5173, or 27017 are in use, modify `docker-compose.yml` port mappings.
-- **Images not found**: Ensure you've built the images with `docker build` before pushing to Docker Hub.
-
-### Extra Credit
-
-- **Deployed a docker container** : Our team has created a docker container and deployed with this and Digital Ocean, please look at docker-compose.yml. We also have a .dockerignore file. 
-- **Continuous Integration and Continuous Deployment** - We have used github actions and secrets to set up an environment (using our cicd.yml file) that allows us to redeploy after every merge of the codebase (not commits), as well as a CI pipeline in the same file. 
+| Problem | Fix |
+|---------|-----|
+| Port already in use | Change the host-side port in `docker-compose.yml` (e.g. `"3002:3001"`) |
+| MongoDB takes a long time on first run | Normal — the image is being pulled. Subsequent starts are fast. |
+| Backend shows "unhealthy" | Wait ~60 s for the start-period to pass; check logs with `docker compose logs backend` |
+| Changes not reflected | Run `docker compose up --build -d` to rebuild the affected image |
