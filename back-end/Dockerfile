@@ -1,11 +1,11 @@
 # Multi-stage build: install dependencies, then run backend
-FROM node:18-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY back-end/package*.json ./
 RUN npm ci --silent
 
 # Production image
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 

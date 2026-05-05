@@ -1,5 +1,5 @@
 # Multi-stage build: build the Vite React app, then serve with Nginx
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Install dependencies

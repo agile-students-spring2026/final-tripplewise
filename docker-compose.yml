@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mongo:
     image: mongo:7.0
@@ -10,7 +8,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
-      - mongo-data:/data/db
+      - ./mongo-data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost/test --quiet
       interval: 10s
@@ -48,5 +46,4 @@ services:
     environment:
       VITE_API_BASE: http://localhost:3001
 
-volumes:
-  mongo-data:
+# Removed named volume — using local ./mongo-data directory instead for persistent data
