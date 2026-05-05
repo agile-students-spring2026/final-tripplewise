@@ -114,5 +114,6 @@ docker compose up --build -d backend
 ## Extra Credit
 
 All three extra credit opportunities were completed:
+
 - Deployed a docker container: Our team has created a docker container and deployed with it on Digital Ocean -> please look at docker-compose.yml. We also have a .dockerignore file.
 - Continuous Integration and Continuous Deployment: We have used Github actions and secrets to set up an environment (using our cicd.yml file) that allows us to redeploy after every merge of the codebase (not commits), as well as a CI pipeline in the same file.
