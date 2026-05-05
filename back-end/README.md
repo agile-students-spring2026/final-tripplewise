@@ -80,19 +80,6 @@ npm run coverage:check
 ```
 
 ---
-
-## Environment Variables
-
-Create a .env file:
-
-```env
-PORT=3001
-MONGODB_URI=mongodb+srv://appuser:studysync123@cluster0.tyszf34.mongodb.net/?appName=Cluster0
-JWT_SECRET=3f3b13e270de532f52959e-f361e8b9e7ea41fc0731a487d6b735cef9e83f3095
-```
-
----
-
 ## API Overview
 
 - Authentication (login, signup)
