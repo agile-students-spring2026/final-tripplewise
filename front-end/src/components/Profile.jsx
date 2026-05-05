@@ -2,13 +2,6 @@ import React, { useState, useEffect } from "react";
 import BackButton from "./BackButton";
 import { styles } from "../styles";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-
-function getAuthHeader() {
-  const token = localStorage.getItem("authToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 export default function Profile({
   currentUser,
   goBack,
@@ -18,30 +11,29 @@ export default function Profile({
   onEditAccount,
   onLogout,
 }) {
-  const [profile, setProfile] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentUser?.id) {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUserData(currentUser || {});
       setLoading(false);
       return;
     }
 
-    fetch(`${API_BASE}/api/profile`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeader(),
-      },
+    fetch("/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success && data.data) {
-          setProfile(data.data);
+        if (data && data.email) {
+          setUserData(data);
         } else {
-          setProfile(currentUser);
+          setUserData(currentUser || {});
         }
       })
-      .catch(() => setProfile(currentUser))
+      .catch(() => setUserData(currentUser || {}))
       .finally(() => setLoading(false));
   }, [currentUser?.id]);
 
@@ -56,14 +48,9 @@ export default function Profile({
     );
   }
 
-  // Use currentUser directly — don't fetch from backend yet
-  const userData = currentUser || {};
-  const username = userData.username || "Student";
-  const email = userData.email || "";
-
-  console.log("Profile currentUser:", currentUser);
-  console.log("Profile username:", username);
-  console.log("Profile email:", email);
+  const user = userData || {};
+  const username = user.username || "Student";
+  const email = user.email || "";
 
   const initials = String(username)
     .split(" ")

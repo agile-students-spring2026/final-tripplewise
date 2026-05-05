@@ -131,6 +131,7 @@ export default function App() {
         <EditAccountDetails
           goBack={() => setPage("userProfile")}
           onLogout={() => setPage("start")}
+          onSave={(updatedUser) => setCurrentUser((prev) => ({ ...prev, ...updatedUser }))}
         />
       )}
 
