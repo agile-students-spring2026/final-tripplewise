@@ -19,17 +19,25 @@ const createToken = (user) => {
 router.post(
   "/signup",
   [
+    body("firstName")
+      .trim()
+      .notEmpty()
+      .withMessage("First name is required"),
+    body("lastName")
+      .trim()
+      .notEmpty()
+      .withMessage("Last name is required"),
+    body("email")
+      .trim()
+      .isEmail()
+      .withMessage("A valid email is required")
+      .normalizeEmail(),
     body("username")
       .trim()
       .notEmpty()
       .withMessage("Username is required")
       .isLength({ min: 3 })
       .withMessage("Username must be at least 3 characters"),
-    body("email")
-      .trim()
-      .isEmail()
-      .withMessage("A valid email is required")
-      .normalizeEmail(),
     body("password")
       .notEmpty()
       .withMessage("Password is required")
@@ -71,8 +79,8 @@ router.post(
         username,
         email,
         password: hashedPassword,
-        firstName: firstName || "",
-        lastName: lastName || "",
+        firstName,
+        lastName,
       });
 
       const token = createToken(user);
