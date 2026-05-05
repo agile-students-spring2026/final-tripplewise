@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -26,11 +26,8 @@ jobs:
         run: npm install
 
       - name: Run backend tests
-        working-directory: back-end
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          PORT: 3001
         run: npm test
 
   frontend:
@@ -53,3 +50,17 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Trigger DigitalOcean Deployment
+        #replace app id once created
+        run: doctl apps create-deployment ${{ secrets.DIGITALOCEAN_APP_ID }}
