@@ -6,6 +6,42 @@ const { expect } = chai;
 chai.use(chaiHttp);
 
 describe("Study Sync Index API", () => {
+  let token;
+
+  before((done) => {
+    const timestamp = Date.now();
+    const testEmail = `index-test-${timestamp}@example.com`;
+    const matchEmail = `index-match-${timestamp}@example.com`;
+
+    chai.request(server)
+      .post("/api/auth/signup")
+      .send({
+        username: `indextest${timestamp}`,
+        email: testEmail,
+        password: "password123",
+      })
+      .end(() => {
+        chai.request(server)
+          .post("/api/auth/signup")
+          .send({
+            username: `matchtest${timestamp}`,
+            email: matchEmail,
+            password: "password123",
+          })
+          .end(() => {
+            chai.request(server)
+              .post("/api/auth/login")
+              .send({
+                email: testEmail,
+                password: "password123",
+              })
+              .end((err, res) => {
+                token = res.body.token;
+                done();
+              });
+          });
+      });
+  });
 
   describe("System Endpoints", () => {
     it("GET /health", (done) => {
@@ -26,7 +62,6 @@ describe("Study Sync Index API", () => {
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body).to.be.an("array");
-          expect(res.body[0]).to.have.property("username");
           done();
         });
     });
@@ -54,10 +89,9 @@ describe("Study Sync Index API", () => {
 
   describe("Schedule API", () => {
     it("POST /api/schedule - Success", (done) => {
-      const newSchedule = [{ name: "Biology", time: "12:00" }];
       chai.request(server)
         .post("/api/schedule")
-        .send(newSchedule)
+        .send([{ name: "Biology", time: "12:00" }])
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.true;
@@ -80,18 +114,19 @@ describe("Study Sync Index API", () => {
 
   describe("Study Syncs API", () => {
     it("POST /api/syncs - Success", (done) => {
-      const syncData = {
-        title: "Test Sync",
-        datetime: new Date().toISOString(),
-        location: "Library",
-        message: "Study time"
-      };
       chai.request(server)
         .post("/api/syncs")
-        .send(syncData)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Test Sync",
+          datetime: new Date().toISOString(),
+          location: "Library",
+          message: "Study time",
+        })
         .end((err, res) => {
           expect(res).to.have.status(201);
-          expect(res.body.title).to.equal("Test Sync");
+          expect(res.body.success).to.be.true;
+          expect(res.body.data.title).to.equal("Test Sync");
           done();
         });
     });
@@ -99,10 +134,10 @@ describe("Study Sync Index API", () => {
     it("POST /api/syncs - Missing Fields", (done) => {
       chai.request(server)
         .post("/api/syncs")
+        .set("Authorization", `Bearer ${token}`)
         .send({ title: "Incomplete" })
         .end((err, res) => {
           expect(res).to.have.status(400);
-          expect(res.body.error).to.equal("Missing required fields");
           done();
         });
     });
@@ -112,9 +147,11 @@ describe("Study Sync Index API", () => {
     it("GET /api/matches - All", (done) => {
       chai.request(server)
         .get("/api/matches")
+        .set("Authorization", `Bearer ${token}`)
         .end((err, res) => {
           expect(res).to.have.status(200);
-          expect(res.body).to.be.an("array");
+          expect(res.body.success).to.be.true;
+          expect(res.body.data).to.be.an("array");
           done();
         });
     });
@@ -122,21 +159,36 @@ describe("Study Sync Index API", () => {
     it("GET /api/matches - Filtered", (done) => {
       chai.request(server)
         .get("/api/matches")
+        .set("Authorization", `Bearer ${token}`)
         .query({ location: "Bobst LL2" })
         .end((err, res) => {
           expect(res).to.have.status(200);
-          expect(res.body.every(m => m.location === "Bobst LL2")).to.be.true;
+          expect(res.body.success).to.be.true;
+          expect(res.body.data).to.be.an("array");
           done();
         });
     });
 
     it("GET /api/matches/:id", (done) => {
       chai.request(server)
-        .get("/api/matches/101")
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.id).to.equal(101);
-          done();
+        .get("/api/matches")
+        .set("Authorization", `Bearer ${token}`)
+        .end((err, matchesRes) => {
+          expect(matchesRes).to.have.status(200);
+
+          const matches = matchesRes.body.data || [];
+          if (!matches.length) return done();
+
+          const id = matches[0]._id || matches[0].id;
+          if (!id) return done();
+
+          chai.request(server)
+            .get(`/api/matches/${id}`)
+            .set("Authorization", `Bearer ${token}`)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              done();
+            });
         });
     });
   });

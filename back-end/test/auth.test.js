@@ -1,127 +1,186 @@
 const express = require("express");
 const request = require("supertest");
 const { expect } = require("chai");
+require("dotenv").config();
 
+const mongoose = require("mongoose");
 const authRouter = require("../routes/auth");
-const { getCurrentUser, setCurrentUser } = require("../data/mockData");
-
-// reset mock user data before each test so that they don't affect each other
-function resetMockUser() {
-  setCurrentUser({
-    id: 1,
-    username: "student123",
-    password: "password123",
-    firstName: "John",
-    lastName: "Doe",
-    email: "johndoe@nyu.edu",
-    phone: "(123) 456-7890",
-    major: "Computer Science",
-    year: "Junior",
-    bio: "Student looking for study partners for CS courses.",
-    schedule: [
-      { id: 1, name: "Operating Systems", time: "Monday 2:00 PM" },
-      { id: 2, name: "Basic Algorithms", time: "Wednesday 4:00 PM" }
-    ],
-    preferredLocations: [
-      "Bobst Library",
-      "Kimmel Commuter Lounge"
-    ],
-    preferredMethods: [
-      "Group Study",
-      "Practice Problems"
-    ]
-  });
-}
+const User = require("../models/User");
 
 describe("Auth routes", function () {
   let app;
+  let token;
 
-  beforeEach(function () {
-    resetMockUser();
+  before(async function () {
+    this.timeout(10000);
+
+    if (!mongoose.connection.readyState) {
+      await mongoose.connect(process.env.MONGODB_URI);
+    }
+  });
+
+  beforeEach(async function () {
+    this.timeout(10000);
 
     app = express();
     app.use(express.json());
     app.use("/api/auth", authRouter);
+
+    await User.deleteMany({});
+    token = null;
   });
 
   describe("POST /api/auth/signup", function () {
     it("returns 400 if username is missing", async function () {
       const res = await request(app)
         .post("/api/auth/signup")
-        .send({ password: "newpass123" });
+        .send({
+          email: "missingusername@example.com",
+          password: "password123",
+        });
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.message).to.equal("Username and password are required");
+      expect(res.body.errors).to.be.an("array");
+    });
+
+    it("returns 400 if email is missing", async function () {
+      const res = await request(app)
+        .post("/api/auth/signup")
+        .send({
+          username: "missingemail",
+          password: "password123",
+        });
+
+      expect(res.status).to.equal(400);
+      expect(res.body.success).to.equal(false);
+      expect(res.body.errors).to.be.an("array");
     });
 
     it("returns 400 if password is missing", async function () {
       const res = await request(app)
         .post("/api/auth/signup")
-        .send({ username: "newuser" });
+        .send({
+          username: "missingpassword",
+          email: "missingpassword@example.com",
+        });
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.message).to.equal("Username and password are required");
+      expect(res.body.errors).to.be.an("array");
     });
 
-    it("create signup successfully with valid username and password", async function () {
+    it("creates signup successfully with valid username, email, and password", async function () {
       const res = await request(app)
         .post("/api/auth/signup")
         .send({
-          username: "syeduser",
-          password: "securepass123"
+          username: "newuser123",
+          email: "newuser@example.com",
+          password: "securepass123",
         });
 
       expect(res.status).to.equal(201);
       expect(res.body.success).to.equal(true);
-      expect(res.body.message).to.equal("Signup successful");
-      expect(res.body.user.username).to.equal("syeduser");
+      expect(res.body.token).to.exist;
+      expect(res.body.user.username).to.equal("newuser123");
+      expect(res.body.user.email).to.equal("newuser@example.com");
 
-      const updatedUser = getCurrentUser();
-      expect(updatedUser.username).to.equal("syeduser");
-      expect(updatedUser.password).to.equal("securepass123");
+      const userInDB = await User.findOne({ email: "newuser@example.com" });
+      expect(userInDB).to.exist;
     });
   });
 
   describe("POST /api/auth/login", function () {
-    it("returns 400 if username is missing", async function () {
+    beforeEach(async function () {
+      await request(app)
+        .post("/api/auth/signup")
+        .send({
+          username: "loginuser123",
+          email: "loginuser@example.com",
+          password: "password123",
+        });
+    });
+
+    it("returns 400 if email is missing", async function () {
       const res = await request(app)
         .post("/api/auth/login")
-        .send({ password: "password123" });
+        .send({
+          password: "password123",
+        });
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.message).to.equal("Username and password are required");
+      expect(res.body.errors).to.be.an("array");
+    });
+
+    it("returns 400 if password is missing", async function () {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({
+          email: "loginuser@example.com",
+        });
+
+      expect(res.status).to.equal(400);
+      expect(res.body.success).to.equal(false);
+      expect(res.body.errors).to.be.an("array");
     });
 
     it("returns 401 for invalid credentials", async function () {
       const res = await request(app)
         .post("/api/auth/login")
         .send({
-          username: "wronguser",
-          password: "wrongpass"
+          email: "wrong@example.com",
+          password: "wrongpass",
         });
 
       expect(res.status).to.equal(401);
       expect(res.body.success).to.equal(false);
-      expect(res.body.message).to.equal("Invalid username or password");
     });
 
-    it("logins successfully with correct credentials", async function () {
+    it("logs in successfully with correct credentials", async function () {
       const res = await request(app)
         .post("/api/auth/login")
         .send({
-          username: "student123",
-          password: "password123"
+          email: "loginuser@example.com",
+          password: "password123",
         });
 
       expect(res.status).to.equal(200);
       expect(res.body.success).to.equal(true);
-      expect(res.body.message).to.equal("Login successful");
-      expect(res.body.user.username).to.equal("student123");
-      expect(res.body.user.firstName).to.equal("John");
-      expect(res.body.user.email).to.equal("johndoe@nyu.edu");
+      expect(res.body.token).to.exist;
+      expect(res.body.user.username).to.equal("loginuser123");
+      expect(res.body.user.email).to.equal("loginuser@example.com");
+    });
+  });
+
+  describe("GET /api/auth/me", function () {
+    beforeEach(async function () {
+      const signupRes = await request(app)
+        .post("/api/auth/signup")
+        .send({
+          username: "meuser123",
+          email: "meuser@example.com",
+          password: "password123",
+        });
+
+      token = signupRes.body.token;
+    });
+
+    it("returns 401 without a token", async function () {
+      const res = await request(app).get("/api/auth/me");
+
+      expect(res.status).to.equal(401);
+    });
+
+    it("returns current user with a valid JWT token", async function () {
+      const res = await request(app)
+        .get("/api/auth/me")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).to.equal(200);
+      expect(res.body.success).to.equal(true);
+      expect(res.body.user.email).to.equal("meuser@example.com");
+      expect(res.body.user.password).to.not.exist;
     });
   });
 });

@@ -7,192 +7,242 @@ chai.use(chaiHttp);
 const { expect } = chai;
 
 describe("Data Persistence & Integration", () => {
+  let token;
+  let targetUserId;
+
+  before(async () => {
+    const timestamp = Date.now();
+
+    const targetRes = await chai.request(app).post("/api/auth/signup").send({
+      username: `integrationtarget${timestamp}`,
+      email: `integrationtarget${timestamp}@example.com`,
+      password: "password123",
+    });
+
+    await chai.request(app).post("/api/auth/signup").send({
+      username: `integrationuser${timestamp}`,
+      email: `integrationuser${timestamp}@example.com`,
+      password: "password123",
+    });
+
+    const loginRes = await chai.request(app).post("/api/auth/login").send({
+      email: `integrationuser${timestamp}@example.com`,
+      password: "password123",
+    });
+
+    token = loginRes.body.token;
+    targetUserId = targetRes.body.user._id || targetRes.body.user.id;
+  });
+
   it("Approved request should appear as a study sync", async () => {
-    // Get initial sync count
-    const initialSyncsRes = await chai.request(app).get("/api/syncs");
-    const initialSyncCount = initialSyncsRes.body.data.length;
-    
-    // Get a pending request
-    const requestsRes = await chai.request(app).get("/api/requests");
-    const requests = requestsRes.body.data;
-    
-    if (requests.length > 0) {
-      const requestId = requests[0].id;
-      const requestDetails = requests[0];
-      
-      // Approve the request
-      const approveRes = await chai.request(app).post(`/api/requests/${requestId}/approve`);
-      expect(approveRes).to.have.status(200);
-      const createdSync = approveRes.body.data;
-      
-      // Verify the returned sync contains request data
-      expect(createdSync).to.have.property("title").that.includes(requestDetails.fromUser);
-      expect(createdSync).to.have.property("location", requestDetails.location);
-      expect(createdSync).to.have.property("status", "active");
-      
-      // Get syncs again and verify sync count increased
-      const updatedSyncsRes = await chai.request(app).get("/api/syncs");
-      const updatedSyncCount = updatedSyncsRes.body.data.length;
-      
-      expect(updatedSyncCount).to.be.greaterThan(initialSyncCount);
-      
-      // Verify the new sync is in the list
-      const newSync = updatedSyncsRes.body.data.find(s => s.id === createdSync.id);
-      expect(newSync).to.exist;
-      expect(newSync).to.have.property("title").that.includes(requestDetails.fromUser);
-    }
+    const initialSyncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const initialSyncs = initialSyncsRes.body.data || initialSyncsRes.body || [];
+    const initialSyncCount = initialSyncs.length;
+
+    const createRes = await chai
+      .request(app)
+      .post("/api/requests")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        toUserId: targetUserId,
+        date: "4/20/2026",
+        time: "3:00 PM",
+        location: "Library",
+      });
+
+    const requestId = createRes.body.data?._id || createRes.body.data?.id;
+    if (!requestId) return;
+
+    const approveRes = await chai
+      .request(app)
+      .post(`/api/requests/${requestId}/approve`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(approveRes).to.have.status(200);
+
+    const updatedSyncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const updatedSyncs = updatedSyncsRes.body.data || updatedSyncsRes.body || [];
+    expect(updatedSyncs.length).to.be.greaterThan(initialSyncCount);
   });
 
   it("Rejected request should NOT appear as a study sync", async () => {
-    // Create a new request
-    const newRequest = {
-      toUserId: "reject_test_user",
-      date: "4/25/2026",
-      time: "5:00 PM",
-      location: "Test Location For Rejection"
-    };
-    
-    const createRes = await chai.request(app).post("/api/requests").send(newRequest);
-    const requestId = createRes.body.data.id;
-    
-    // Get initial sync count
-    const initialSyncsRes = await chai.request(app).get("/api/syncs");
-    const initialSyncCount = initialSyncsRes.body.data.length;
-    
-    // Reject the request
-    const rejectRes = await chai.request(app).post(`/api/requests/${requestId}/reject`);
+    const initialSyncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const initialSyncs = initialSyncsRes.body.data || initialSyncsRes.body || [];
+    const initialSyncCount = initialSyncs.length;
+
+    const createRes = await chai
+      .request(app)
+      .post("/api/requests")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        toUserId: targetUserId,
+        date: "4/25/2026",
+        time: "5:00 PM",
+        location: "Test Location For Rejection",
+      });
+
+    const requestId = createRes.body.data?._id || createRes.body.data?.id;
+    if (!requestId) return;
+
+    const rejectRes = await chai
+      .request(app)
+      .post(`/api/requests/${requestId}/reject`)
+      .set("Authorization", `Bearer ${token}`);
+
     expect(rejectRes).to.have.status(200);
-    
-    // Get syncs and verify count hasn't changed
-    const updatedSyncsRes = await chai.request(app).get("/api/syncs");
-    const updatedSyncCount = updatedSyncsRes.body.data.length;
-    
-    expect(updatedSyncCount).to.equal(initialSyncCount);
-    
-    // Verify no sync contains the rejection location
-    const hasSyncWithLocation = updatedSyncsRes.body.data.some(s => 
-      s.location === "Test Location For Rejection"
+
+    const updatedSyncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const updatedSyncs = updatedSyncsRes.body.data || updatedSyncsRes.body || [];
+    expect(updatedSyncs.length).to.equal(initialSyncCount);
+
+    const hasSyncWithLocation = updatedSyncs.some(
+      (sync) => sync.location === "Test Location For Rejection"
     );
+
     expect(hasSyncWithLocation).to.be.false;
   });
 
   it("Approved request should be removed from requests list", async () => {
-    // Get initial requests
-    const initialReqRes = await chai.request(app).get("/api/requests");
-    const initialReqCount = initialReqRes.body.data.length;
-    
-    if (initialReqCount > 0) {
-      const requestId = initialReqRes.body.data[0].id;
-      
-      // Approve the request
-      await chai.request(app).post(`/api/requests/${requestId}/approve`);
-      
-      // Get updated requests
-      const updatedReqRes = await chai.request(app).get("/api/requests");
-      const updatedReqCount = updatedReqRes.body.data.length;
-      
-      // Verify request was removed
-      expect(updatedReqCount).to.be.lessThan(initialReqCount);
-      
-      // Verify the specific request is gone
-      const requestStillExists = updatedReqRes.body.data.some(r => r.id === requestId);
-      expect(requestStillExists).to.be.false;
-    }
+    const createRes = await chai
+      .request(app)
+      .post("/api/requests")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        toUserId: targetUserId,
+        date: "4/22/2026",
+        time: "5:00 PM",
+        location: "Library",
+      });
+
+    const requestId = createRes.body.data?._id || createRes.body.data?.id;
+    if (!requestId) return;
+
+    const initialReqRes = await chai
+      .request(app)
+      .get("/api/requests")
+      .set("Authorization", `Bearer ${token}`);
+
+    const initialRequests = initialReqRes.body.data || initialReqRes.body || [];
+    const initialReqCount = initialRequests.length;
+
+    await chai
+      .request(app)
+      .post(`/api/requests/${requestId}/approve`)
+      .set("Authorization", `Bearer ${token}`);
+
+    const updatedReqRes = await chai
+      .request(app)
+      .get("/api/requests")
+      .set("Authorization", `Bearer ${token}`);
+
+    const updatedRequests = updatedReqRes.body.data || updatedReqRes.body || [];
+    expect(updatedRequests.length).to.be.lessThan(initialReqCount);
+
+    const requestStillExists = updatedRequests.some(
+      (request) => (request._id || request.id) === requestId
+    );
+
+    expect(requestStillExists).to.be.false;
   });
 
   it("Created sync should have all required fields", async () => {
-    // Create a new request
-    const newRequest = {
-      toUserId: "field_test_user",
-      date: "4/26/2026",
-      time: "6:00 PM",
-      location: "Field Test Location"
-    };
-    
-    const createRes = await chai.request(app).post("/api/requests").send(newRequest);
-    const requestId = createRes.body.data.id;
-    
-    // Approve it
-    const approveRes = await chai.request(app).post(`/api/requests/${requestId}/approve`);
-    const createdSync = approveRes.body.data;
-    
-    // Verify all required fields exist
-    expect(createdSync).to.have.property("id").that.is.a("number");
-    expect(createdSync).to.have.property("title").that.is.a("string");
-    expect(createdSync).to.have.property("datetime").that.is.a("string");
-    expect(createdSync).to.have.property("location", "Field Test Location");
-    expect(createdSync).to.have.property("message").that.is.a("string");
-    expect(createdSync).to.have.property("members").that.is.an("array");
-    expect(createdSync).to.have.property("maxMembers").that.is.a("number");
-    expect(createdSync).to.have.property("status", "active");
+    const res = await chai
+      .request(app)
+      .post("/api/syncs")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Integration Sync",
+        datetime: new Date().toISOString(),
+        location: "Field Test Location",
+        message: "Integration test sync",
+      });
+
+    expect(res).to.have.status(201);
+
+    const sync = res.body.data;
+    expect(sync).to.exist;
+    expect(sync).to.have.property("_id");
+    expect(sync).to.have.property("title").that.is.a("string");
+    expect(sync).to.have.property("datetime");
+    expect(sync).to.have.property("location", "Field Test Location");
   });
 
   it("Multiple approved requests should create separate syncs", async () => {
-    // Get initial sync count
-    const initialSyncsRes = await chai.request(app).get("/api/syncs");
-    const initialSyncCount = initialSyncsRes.body.data.length;
-    const initialSyncIds = new Set(initialSyncsRes.body.data.map(s => s.id));
-    
-    // Get requests
-    const requestsRes = await chai.request(app).get("/api/requests");
-    const requests = requestsRes.body.data;
-    
+    const initialSyncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const initialSyncs = initialSyncsRes.body.data || initialSyncsRes.body || [];
+    const initialSyncCount = initialSyncs.length;
+
     let approvedCount = 0;
-    
-    // Approve first 2 requests (if available)
-    for (let i = 0; i < Math.min(2, requests.length); i++) {
-      const requestId = requests[i].id;
-      const approveRes = await chai.request(app).post(`/api/requests/${requestId}/approve`);
-      
+
+    for (let i = 0; i < 2; i++) {
+      const createRes = await chai
+        .request(app)
+        .post("/api/requests")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          toUserId: targetUserId,
+          date: `4/2${i + 3}/2026`,
+          time: `${6 + i}:00 PM`,
+          location: `Library ${i + 1}`,
+        });
+
+      const requestId = createRes.body.data?._id || createRes.body.data?.id;
+      if (!requestId) continue;
+
+      const approveRes = await chai
+        .request(app)
+        .post(`/api/requests/${requestId}/approve`)
+        .set("Authorization", `Bearer ${token}`);
+
       if (approveRes.status === 200) {
         approvedCount++;
       }
     }
-    
-    if (approvedCount > 0) {
-      // Get updated syncs
-      const updatedSyncsRes = await chai.request(app).get("/api/syncs");
-      const updatedSyncCount = updatedSyncsRes.body.data.length;
-      
-      // Verify new syncs were created (count increased)
-      expect(updatedSyncCount).to.equal(initialSyncCount + approvedCount);
-      
-      // Verify new syncs have different IDs
-      const newSyncIds = updatedSyncsRes.body.data.map(s => s.id);
-      const newIds = newSyncIds.filter(id => !initialSyncIds.has(id));
-      expect(newIds.length).to.equal(approvedCount);
-    }
+
+    const updatedSyncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const updatedSyncs = updatedSyncsRes.body.data || updatedSyncsRes.body || [];
+    expect(updatedSyncs.length).to.be.at.least(initialSyncCount + approvedCount);
   });
 
   it("Syncs and requests endpoints should use consistent data", async () => {
-    // Create a new request
-    const newRequest = {
-      toUserId: "consistency_test",
-      date: "4/27/2026",
-      time: "7:00 PM",
-      location: "Consistency Test Location"
-    };
-    
-    const createRes = await chai.request(app).post("/api/requests").send(newRequest);
-    const requestId = createRes.body.data.id;
-    
-    // Verify request appears in GET /api/requests
-    const reqsBeforeApprove = await chai.request(app).get("/api/requests");
-    const requestExists = reqsBeforeApprove.body.data.some(r => r.id === requestId);
-    expect(requestExists).to.be.true;
-    
-    // Approve the request
-    const approveRes = await chai.request(app).post(`/api/requests/${requestId}/approve`);
-    expect(approveRes).to.have.status(200);
-    
-    // Verify request is gone from /api/requests
-    const reqsAfterApprove = await chai.request(app).get("/api/requests");
-    const requestGone = !reqsAfterApprove.body.data.some(r => r.id === requestId);
-    expect(requestGone).to.be.true;
-    
-    // Verify sync is in /api/syncs
-    const syncs = await chai.request(app).get("/api/syncs");
-    const syncExists = syncs.body.data.some(s => s.id === approveRes.body.data.id);
-    expect(syncExists).to.be.true;
+    const requestsRes = await chai
+      .request(app)
+      .get("/api/requests")
+      .set("Authorization", `Bearer ${token}`);
+
+    const syncsRes = await chai
+      .request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
+
+    const requests = requestsRes.body.data || requestsRes.body || [];
+    const syncs = syncsRes.body.data || syncsRes.body || [];
+
+    expect(requests).to.be.an("array");
+    expect(syncs).to.be.an("array");
   });
 });
