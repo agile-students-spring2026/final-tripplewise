@@ -66,11 +66,11 @@ jobs:
       - name: Deploy to Digital Ocean Droplet via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USERNAME }}
-          key: ${{ secrets.DO_SSH_KEY }}
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
-            cd /opt/tripplewise
+            cd ~/final-tripplewise
 
             # Pull latest code
             git pull origin master
@@ -82,7 +82,7 @@ jobs:
               '${{ secrets.MONGO_PASSWORD }}' > .env
 
             # Rebuild and restart containers
-            docker compose up --build -d
+            docker-compose up --build -d
 
             # Remove unused images to save disk space
             docker image prune -f
