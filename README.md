@@ -34,6 +34,15 @@ On every push or pull request to the `master` branch, the following steps are ex
 - Install dependencies using `npm install`
 - Build the application using `npm run build`
 
+## Live Demo
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://161.35.51.3:5173 |
+| Backend API | http://161.35.51.3:3001 |
+
+---
+
 ## Running with Docker
 
 StudySync uses Docker and Docker Compose to run all three services — MongoDB, the Express backend, and the Nginx-served React frontend — together in an isolated environment.
