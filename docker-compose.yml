@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: tripplewise-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: back-end/Dockerfile
+    container_name: tripplewise-backend
+    ports:
+      - "3001:3001"
+    environment:
+      MONGODB_URI: mongodb://admin:password@mongo:27017/tripplewise?authSource=admin
+      JWT_SECRET: your_secret_key_here_change_in_production
+      NODE_ENV: development
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./back-end:/app
+      - /app/node_modules
+    command: npm run dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: front-end/Dockerfile
+    container_name: tripplewise-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE: http://localhost:3001
+
+volumes:
+  mongo-data:
