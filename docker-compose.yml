@@ -8,25 +8,6 @@
 # ============================================================
 
 services:
-  mongo:
-    image: mongo:7.0
-    container_name: tripplewise-mongo
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - tripplewise-net
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    restart: unless-stopped
 
   backend:
     build:
@@ -38,14 +19,10 @@ services:
     ports:
       - "3001:3001"
     environment:
-      # Falls back to the local mongo service if MONGODB_URI is not set in .env
-      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:password@mongo:27017/?authSource=admin}
+      MONGODB_URI: ${MONGODB_URI}
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3001
-    depends_on:
-      mongo:
-        condition: service_healthy
     networks:
       - tripplewise-net
     restart: unless-stopped
@@ -62,11 +39,6 @@ services:
     networks:
       - tripplewise-net
     restart: unless-stopped
-
-# Named volume for MongoDB data persistence
-# Use `docker compose down -v` to wipe data for a clean start
-volumes:
-  mongo-data:
 
 # Shared network so nginx can proxy to 'backend' by service name
 networks:
