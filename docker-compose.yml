@@ -3,8 +3,8 @@
 #
 # Secrets are loaded from a .env file in the repo root.
 # Copy .env.example to .env and fill in real values before
-# running `docker-compose up`.  The .env file is gitignored
-# and must NEVER be committed to version control.
+# running `docker compose up --build`.  The .env file is
+# gitignored and must NEVER be committed to version control.
 # ============================================================
 
 services:
@@ -17,28 +17,37 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
     volumes:
-      - ./mongo-data:/data/db
+      - mongo-data:/data/db
+    networks:
+      - tripplewise-net
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost/test --quiet
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
+    restart: unless-stopped
 
   backend:
     build:
       context: .
       dockerfile: back-end/Dockerfile
     container_name: tripplewise-backend
+    env_file:
+      - .env
     ports:
       - "3001:3001"
     environment:
-      # Read from .env file — never hardcode secrets here
-      MONGODB_URI: ${MONGODB_URI}
+      # Falls back to the local mongo service if MONGODB_URI is not set in .env
+      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:password@mongo:27017/?authSource=admin}
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3001
     depends_on:
       mongo:
         condition: service_healthy
+    networks:
+      - tripplewise-net
     restart: unless-stopped
 
   frontend:
@@ -50,7 +59,16 @@ services:
       - "5173:80"
     depends_on:
       - backend
+    networks:
+      - tripplewise-net
     restart: unless-stopped
 
-# Data persistence: MongoDB data stored in ./mongo-data (gitignored)
-# Use `docker-compose down -v` to wipe data for a clean start
+# Named volume for MongoDB data persistence
+# Use `docker compose down -v` to wipe data for a clean start
+volumes:
+  mongo-data:
+
+# Shared network so nginx can proxy to 'backend' by service name
+networks:
+  tripplewise-net:
+    driver: bridge
