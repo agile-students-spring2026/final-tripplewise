@@ -66,7 +66,7 @@ Create a `.env` file in the project root and set the following values:
 |----------|-------------|
 | `MONGODB_URI` | MongoDB connection string (leave blank to use the local container) |
 | `JWT_SECRET` | A long, random secret string for signing JWTs |
-| `NODE_ENV` | Set to `production` for Docker runs |
+| `PORT` | the network port number on which a web server should listen for incoming traffic |
 
 ---
 
@@ -90,7 +90,6 @@ This single command will:
 |---------|-----|
 | Frontend | http://localhost:5173 |
 | Backend API | http://localhost:3001 |
-| MongoDB | `localhost:27017` (user: `admin`, password: value from `.env`) |
 
 ---
 
