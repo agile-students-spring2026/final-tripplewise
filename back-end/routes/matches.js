@@ -21,24 +21,37 @@ router.get("/", authMiddleware, async (req, res) => {
       lastName: { $exists: true, $nin: ["", null] },
     }).select("-password");
 
-    // Calculate match percentages
-    const matches = candidates.map((candidate) => {
-      const matchPercentage = calculateMatchPercentage(
-        currentUser.toObject(),
-        candidate.toObject()
-      );
-      return {
-        id: candidate._id,
-        username: candidate.username,
-        firstName: candidate.firstName || "",
-        lastName: candidate.lastName || "",
-        major: candidate.major || "",
-        year: candidate.year || "",
-        preferredLocations: candidate.preferredLocations || [],
-        preferredMethods: candidate.preferredMethods || [],
-        matchPercentage,
-      };
-    });
+    // Calculate match percentages, only include users with meaningful profiles
+    const matches = candidates
+      .filter((candidate) => {
+        // Must have at least a first or last name to be shown as a match
+        const hasName =
+          (candidate.firstName && candidate.firstName.trim().length > 0) ||
+          (candidate.lastName && candidate.lastName.trim().length > 0);
+        // Must have at least one study preference set (location, method, or schedule)
+        const hasPreferences =
+          (candidate.preferredLocations && candidate.preferredLocations.length > 0) ||
+          (candidate.preferredMethods && candidate.preferredMethods.length > 0) ||
+          (candidate.schedule && candidate.schedule.length > 0);
+        return hasName && hasPreferences;
+      })
+      .map((candidate) => {
+        const matchPercentage = calculateMatchPercentage(
+          currentUser.toObject(),
+          candidate.toObject()
+        );
+        return {
+          id: candidate._id,
+          username: candidate.username,
+          firstName: candidate.firstName || "",
+          lastName: candidate.lastName || "",
+          major: candidate.major || "",
+          year: candidate.year || "",
+          preferredLocations: candidate.preferredLocations || [],
+          preferredMethods: candidate.preferredMethods || [],
+          matchPercentage,
+        };
+      });
 
     // Sort by match percentage descending by default
     matches.sort((a, b) => b.matchPercentage - a.matchPercentage);

@@ -22,7 +22,14 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
     })
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled) setMatches(Array.isArray(data.data) ? data.data : data);
+        if (!cancelled) {
+          const raw = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+          // Filter out empty/incomplete profiles that have no name
+          const valid = raw.filter(
+            (m) => (m.firstName && m.firstName.trim()) || (m.lastName && m.lastName.trim())
+          );
+          setMatches(valid);
+        }
       })
       .catch((err) => {
         console.warn("Could not load matches:", err.message);
@@ -76,6 +83,9 @@ export default function StudySyncMatches({ onBack, onViewProfile }) {
   if (loading) {
     return (
       <div style={styles.page}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "20px", gap: "14px", width: "100%" }}>
+          <BackButton onClick={onBack} />
+        </div>
         <div style={{ textAlign: "center", padding: "60px 0", color: "#bbb", fontSize: "14px" }}>
           ⏳ Finding your matches…
         </div>
