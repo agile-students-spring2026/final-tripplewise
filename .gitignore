@@ -126,4 +126,5 @@ typings/
 
 ## Jekyll artifacts
 **/.jekyll-cache
-**/_site/
+**/_site/mongo-data/
+mongo-data/
