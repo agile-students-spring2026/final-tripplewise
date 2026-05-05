@@ -54,15 +54,35 @@ jobs:
         run: npm run build
 
   deploy:
+    # Only runs on pushes to master (not on pull requests)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [backend, frontend]
     runs-on: ubuntu-latest
-    steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Trigger DigitalOcean Deployment
-        #replace app id once created
-        run: doctl apps create-deployment ${{ secrets.DIGITALOCEAN_APP_ID }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Deploy to Digital Ocean Droplet via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /opt/tripplewise
+
+            # Pull latest code
+            git pull origin master
+
+            # Write the .env file from GitHub Secrets (never stored in repo)
+            printf 'MONGODB_URI=%s\nJWT_SECRET=%s\nNODE_ENV=production\nMONGO_USERNAME=admin\nMONGO_PASSWORD=%s\n' \
+              '${{ secrets.MONGODB_URI }}' \
+              '${{ secrets.JWT_SECRET }}' \
+              '${{ secrets.MONGO_PASSWORD }}' > .env
+
+            # Rebuild and restart containers
+            docker compose up --build -d
+
+            # Remove unused images to save disk space
+            docker image prune -f
