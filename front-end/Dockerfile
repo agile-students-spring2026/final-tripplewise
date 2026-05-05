@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY front-end/package*.json ./
-RUN npm ci --silent
+RUN npm ci
 
 # Copy source and build
 COPY front-end/ ./
