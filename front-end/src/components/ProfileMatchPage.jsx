@@ -118,7 +118,16 @@ export default function ProfileMatchPage({ profile: propProfile, id: propId, goB
     return (
       <div style={styles.page}>
         <div style={styles.topRow}><BackButton onClick={goBack} /></div>
-        <p style={{ textAlign: "center", marginTop: 40, color: "#666" }}>Profile not found.</p>
+        <div style={{ textAlign: "center", marginTop: 60 }}>
+          <div style={{ fontSize: "40px", marginBottom: "12px" }}>😕</div>
+          <p style={{ color: "#666", fontSize: "14px", fontWeight: "600" }}>Profile not found.</p>
+          <button
+            onClick={goBack}
+            style={{ marginTop: 16, padding: "10px 24px", background: "#aa3bff", color: "white", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: "bold", fontSize: 13 }}
+          >
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
