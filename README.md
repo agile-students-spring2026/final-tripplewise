@@ -23,6 +23,13 @@ This project follows a team-based contribution model. Please refer to our [CONTR
 
 Instructions for testing and building this project will be provided as the project progress. 
 
+## Live Demo
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://161.35.51.3:5173 |
+| Backend API | http://161.35.51.3:3001 |
+
 ## Building and Testing
 On every push or pull request to the `master` branch, the following steps are executed:
 
@@ -34,20 +41,9 @@ On every push or pull request to the `master` branch, the following steps are ex
 - Install dependencies using `npm install`
 - Build the application using `npm run build`
 
-## Live Demo
-
-| Service | URL |
-|---------|-----|
-| Frontend | http://161.35.51.3:5173 |
-| Backend API | http://161.35.51.3:3001 |
-
----
-
 ## Running with Docker
 
 StudySync uses Docker and Docker Compose to run all three services — MongoDB, the Express backend, and the Nginx-served React frontend — together in an isolated environment.
-
----
 
 ### What You Need
 
@@ -55,8 +51,6 @@ StudySync uses Docker and Docker Compose to run all three services — MongoDB, 
 |------|---------|
 | [Docker Desktop](https://www.docker.com/products/docker-desktop) | Runs and manages containers |
 | [Docker Compose](https://docs.docker.com/compose/install/) | Orchestrates multi-container setup (bundled with Docker Desktop) |
-
----
 
 ### Step 1 — Set Up Your Environment File
 
@@ -67,8 +61,6 @@ Create a `.env` file in the project root and set the following values:
 | `MONGODB_URI` | MongoDB connection string (leave blank to use the local container) |
 | `JWT_SECRET` | A long, random secret string for signing JWTs |
 | `PORT` | the network port number on which a web server should listen for incoming traffic |
-
----
 
 ### Step 2 — Build and Start All Services
 
@@ -82,16 +74,12 @@ This single command will:
 - Pull and start **MongoDB 7.0** with a persistent named volume
 - Wire all three services together on a private Docker network
 
----
-
 ### Step 3 — Open the App
 
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:5173 |
 | Backend API | http://localhost:3001 |
-
----
 
 ### Useful Commands
 
@@ -114,8 +102,6 @@ docker compose down -v
 docker compose up --build -d backend
 ```
 
----
-
 ### Troubleshooting
 
 | Problem | Fix |
@@ -124,3 +110,9 @@ docker compose up --build -d backend
 | MongoDB takes a long time on first run | Normal — the image is being pulled. Subsequent starts are fast. |
 | Backend shows "unhealthy" | Wait ~60 s for the start-period to pass; check logs with `docker compose logs backend` |
 | Changes not reflected | Run `docker compose up --build -d` to rebuild the affected image |
+
+## Extra Credit
+
+All three extra credit opportunities were completed:
+- Deployed a docker container: Our team has created a docker container and deployed with it on Digital Ocean -> please look at docker-compose.yml. We also have a .dockerignore file.
+- Continuous Integration and Continuous Deployment: We have used Github actions and secrets to set up an environment (using our cicd.yml file) that allows us to redeploy after every merge of the codebase (not commits), as well as a CI pipeline in the same file.
