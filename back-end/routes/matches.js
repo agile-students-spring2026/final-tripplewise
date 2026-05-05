@@ -14,8 +14,12 @@ router.get("/", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Current user not found" });
     }
 
-    // Get all other users from the database
-    const candidates = await User.find({ _id: { $ne: req.user.userId } }).select("-password");
+    // Get all other users from the database that have real names
+    const candidates = await User.find({
+      _id: { $ne: req.user.userId },
+      firstName: { $exists: true, $nin: ["", null] },
+      lastName: { $exists: true, $nin: ["", null] },
+    }).select("-password");
 
     // Calculate match percentages
     const matches = candidates.map((candidate) => {
