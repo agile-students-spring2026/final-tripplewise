@@ -125,3 +125,8 @@ Visit `https://hub.docker.com/r/yourusername/tripplewise-backend` and `https://h
 - **Slow MongoDB pull on first run**: This is normal. Subsequent `docker-compose up` commands reuse the `./mongo-data/` volume for fast startup.
 - **Port already in use**: If ports 3001, 5173, or 27017 are in use, modify `docker-compose.yml` port mappings.
 - **Images not found**: Ensure you've built the images with `docker build` before pushing to Docker Hub.
+
+### Extra Credit
+
+- **Deployed a docker container** : Our team has created a docker container and deployed with this and Digital Ocean, please look at docker-compose.yml. We also have a .dockerignore file. 
+- **Continuous Integration and Continuous Deployment** - We have used github actions and secrets to set up an environment (using our cicd.yml file) that allows us to redeploy after every merge of the codebase (not commits), as well as a CI pipeline in the same file. 
