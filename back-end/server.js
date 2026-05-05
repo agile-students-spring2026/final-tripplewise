@@ -211,8 +211,8 @@ app.put("/api/users/me/methods", authMiddleware, async (req, res) => {
 
 // ===== START SERVER =====
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server is running on port ${PORT}`);
   });
 }
 
