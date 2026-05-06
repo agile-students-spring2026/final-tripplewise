@@ -21,8 +21,33 @@ export default function SignUpPageOne({ goNext, goBack }) {
   async function handleSignup() {
     setError("");
 
-    if (!formData.username || !formData.password) {
-      setError("Username and password are required");
+    if (!formData.firstName.trim()) {
+      setError("First name is required");
+      return;
+    }
+    if (!formData.lastName.trim()) {
+      setError("Last name is required");
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError("Email address is required");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    if (!formData.username.trim()) {
+      setError("Username is required");
+      return;
+    }
+    if (!formData.password) {
+      setError("Password is required");
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
       return;
     }
 

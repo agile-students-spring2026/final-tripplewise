@@ -107,11 +107,17 @@ export default function App() {
         />
       )}
 
-      {page === "matchProfile" && selectedMatchProfile && (
+      {page === "matchProfile" && (
         <ProfileMatchPage
           profile={selectedMatchProfile}
-          goBack={() => setPage("matches")}
-          goToDashboard={() => setPage("dashboard")}
+          goBack={() => {
+            setSelectedMatchProfile(null);
+            setPage("matches");
+          }}
+          goToDashboard={() => {
+            setSelectedMatchProfile(null);
+            setPage("dashboard");
+          }}
         />
       )}
 
@@ -131,6 +137,7 @@ export default function App() {
         <EditAccountDetails
           goBack={() => setPage("userProfile")}
           onLogout={() => setPage("start")}
+          onSave={(updatedUser) => setCurrentUser((prev) => ({ ...prev, ...updatedUser }))}
         />
       )}
 

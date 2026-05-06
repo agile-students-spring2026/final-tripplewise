@@ -14,13 +14,13 @@ const MAJORS = [
 
 const dropdownStyle = {
   width: "100%",
-  height: "38px",
+  height: "52px",
   borderRadius: "10px",
   border: "1px solid #ccc",
   backgroundColor: "white",
   color: "black",
-  fontSize: "14px",
-  padding: "0 10px",
+  fontSize: "16px",
+  padding: "0 14px",
   cursor: "pointer",
   boxSizing: "border-box",
 };
@@ -29,16 +29,18 @@ const inputStyle = {
   ...styles.input,
   borderRadius: "10px",
   border: "1px solid #ccc",
-  fontSize: "14px",
-  height: "38px",
+  fontSize: "16px",
+  height: "52px",
 };
 
 const sectionCard = {
   backgroundColor: "white",
   borderRadius: "14px",
-  padding: "16px",
+  padding: "16px 12px",
   marginBottom: "16px",
   boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 const sectionTitle = {
@@ -50,7 +52,9 @@ const sectionTitle = {
   marginBottom: "14px",
   display: "flex",
   alignItems: "center",
+  justifyContent: "center",
   gap: "6px",
+  textAlign: "center",
 };
 
 const fieldLabel = {
@@ -59,24 +63,25 @@ const fieldLabel = {
   color: "#555",
   marginBottom: "4px",
   display: "block",
+  textAlign: "center",
 };
 
 const savedHint = {
   fontSize: "11px",
   color: "#aaa",
   marginTop: "3px",
-  paddingLeft: "2px",
+  textAlign: "center",
 };
 
 const notSetHint = {
   fontSize: "11px",
   color: "#ccc",
   marginTop: "3px",
-  paddingLeft: "2px",
   fontStyle: "italic",
+  textAlign: "center",
 };
 
-export default function EditAccountDetails({ goBack, onLogout }) {
+export default function EditAccountDetails({ goBack, onLogout, onSave }) {
   const [formData, setFormData] = useState({
     username:  "",
     firstName: "",
@@ -132,10 +137,18 @@ export default function EditAccountDetails({ goBack, onLogout }) {
       },
       body: JSON.stringify(formData),
     })
-      .then((r) => r.json())
-      .then(() => {
+      .then((r) => {
+        if (!r.ok) throw new Error("Save failed");
+        return r.json();
+      })
+      .then((data) => {
         setSaving(false);
         setStatus("saved");
+        setSavedData(formData);
+        const updatedUser = data.user || formData;
+        if (typeof onSave === "function") {
+          onSave(updatedUser);
+        }
         setTimeout(() => goBack(), 900);
       })
       .catch(() => {
@@ -213,29 +226,28 @@ export default function EditAccountDetails({ goBack, onLogout }) {
           <div style={sectionCard}>
             <div style={sectionTitle}>👤 Personal Information</div>
 
-            <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
-              <div style={{ flex: 1 }}>
-                <label style={fieldLabel}>First Name</label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange("firstName", e.target.value)}
-                  style={inputStyle}
-                  placeholder="First name"
-                />
-                <Hint field="firstName" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={fieldLabel}>Last Name</label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange("lastName", e.target.value)}
-                  style={inputStyle}
-                  placeholder="Last name"
-                />
-                <Hint field="lastName" />
-              </div>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={fieldLabel}>First Name</label>
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
+                style={inputStyle}
+                placeholder="First name"
+              />
+              <Hint field="firstName" />
+            </div>
+
+            <div style={{ marginBottom: "12px" }}>
+              <label style={fieldLabel}>Last Name</label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
+                style={inputStyle}
+                placeholder="Last name"
+              />
+              <Hint field="lastName" />
             </div>
 
             <div style={{ marginBottom: "12px" }}>
@@ -267,35 +279,34 @@ export default function EditAccountDetails({ goBack, onLogout }) {
           <div style={sectionCard}>
             <div style={sectionTitle}>🎓 Academic Information</div>
 
-            <div style={{ display: "flex", gap: "10px", marginBottom: "4px", justifyContent: "center" }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ ...fieldLabel, textAlign: "center" }}>Major</label>
-                <select
-                  value={formData.major}
-                  onChange={(e) => handleInputChange("major", e.target.value)}
-                  style={dropdownStyle}
-                >
-                  {MAJORS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                <Hint field="major" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ ...fieldLabel, textAlign: "center" }}>Year</label>
-                <select
-                  value={formData.year}
-                  onChange={(e) => handleInputChange("year", e.target.value)}
-                  style={dropdownStyle}
-                >
-                  <option value="Freshman">Freshman</option>
-                  <option value="Sophomore">Sophomore</option>
-                  <option value="Junior">Junior</option>
-                  <option value="Senior">Senior</option>
-                  <option value="Graduate">Graduate</option>
-                </select>
-                <Hint field="year" />
-              </div>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={fieldLabel}>Major</label>
+              <select
+                value={formData.major}
+                onChange={(e) => handleInputChange("major", e.target.value)}
+                style={dropdownStyle}
+              >
+                {MAJORS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <Hint field="major" />
+            </div>
+
+            <div style={{ marginBottom: "4px" }}>
+              <label style={fieldLabel}>Year</label>
+              <select
+                value={formData.year}
+                onChange={(e) => handleInputChange("year", e.target.value)}
+                style={dropdownStyle}
+              >
+                <option value="Freshman">Freshman</option>
+                <option value="Sophomore">Sophomore</option>
+                <option value="Junior">Junior</option>
+                <option value="Senior">Senior</option>
+                <option value="Graduate">Graduate</option>
+              </select>
+              <Hint field="year" />
             </div>
           </div>
 

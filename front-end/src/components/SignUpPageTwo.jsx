@@ -10,7 +10,12 @@ const HOURS = [
 
 const MAJORS = [
   "Computer Science", "Mathematics", "Art History", "Physics",
-  "Electrical Engineering", "Finance", "Accounting",
+  "Electrical Engineering", "Finance", "Accounting", "Other",
+];
+
+const YEARS = [
+  "Freshman", "Sophomore", "Junior", "Senior",
+  "Graduate Student", "PhD Student", "Other",
 ];
 
 const LOCATION_OPTIONS = [
@@ -34,6 +39,9 @@ const card = {
   padding: "16px",
   marginBottom: "16px",
   boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+  width: "100%",
+  boxSizing: "border-box",
+  alignSelf: "stretch",
 };
 
 const cardTitle = {
@@ -43,6 +51,7 @@ const cardTitle = {
   textTransform: "uppercase",
   letterSpacing: "1px",
   marginBottom: "14px",
+  textAlign: "center",
 };
 
 const fieldLabel = {
@@ -53,9 +62,11 @@ const fieldLabel = {
   display: "block",
 };
 
-const dropdownStyle = {
+// Unified size for ALL dropdowns and inputs
+const uniformControl = {
   width: "100%",
-  height: "38px",
+  height: "42px",
+  lineHeight: "42px",
   borderRadius: "10px",
   border: "1px solid #ccc",
   backgroundColor: "white",
@@ -64,18 +75,18 @@ const dropdownStyle = {
   padding: "0 10px",
   cursor: "pointer",
   boxSizing: "border-box",
-};
-
-const inputStyle = {
-  ...styles.input,
-  borderRadius: "10px",
-  border: "1px solid #ccc",
-  fontSize: "14px",
-  height: "38px",
+  display: "block",
+  appearance: "auto",
+  WebkitAppearance: "auto",
+  margin: "0",
+  outline: "none",
+  fontFamily: "inherit",
 };
 
 export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
-  const [major, setMajor] = useState(MAJORS[0]);
+  const [major, setMajor] = useState("");
+  const [customMajor, setCustomMajor] = useState("");
+  const [year, setYear] = useState("");
 
   const [classes, setClasses] = useState([
     { name: "", day: "", hour: "9:00", period: "AM" },
@@ -108,8 +119,21 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
     setMethods(prev => { const n = [...prev]; n[idx] = { ...n[idx], [field]: value }; return n; });
 
   async function finishSignup() {
-    const token = localStorage.getItem("token");
     setError("");
+
+    // Validate major is selected
+    if (!major) {
+      setError("Please select your major.");
+      return;
+    }
+    if (major === "Other" && !customMajor.trim()) {
+      setError("Please enter your major.");
+      return;
+    }
+
+    const resolvedMajor = major === "Other" ? customMajor.trim() : major;
+
+    const token = localStorage.getItem("token");
     setSaving(true);
 
     const filledClasses = classes.filter(c => c.name.trim()).map((c, i) => ({
@@ -128,10 +152,11 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
       .filter(m => m && m.trim());
 
     try {
+      // Save major and year together
       await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ major }),
+        body: JSON.stringify({ major: resolvedMajor, year }),
       });
 
       if (filledClasses.length > 0) {
@@ -174,6 +199,35 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
 
   return (
     <div style={styles.page}>
+      {/* Force identical height/padding on all inputs and selects in this page */}
+      <style>{`
+        .signup2-control {
+          width: 100% !important;
+          height: 42px !important;
+          min-height: 42px !important;
+          max-height: 42px !important;
+          border-radius: 10px !important;
+          border: 1px solid #ccc !important;
+          background-color: white !important;
+          color: black !important;
+          font-size: 14px !important;
+          font-family: inherit !important;
+          padding: 0 10px !important;
+          box-sizing: border-box !important;
+          display: block !important;
+          margin: 0 !important;
+          outline: none !important;
+          -webkit-appearance: auto !important;
+          appearance: auto !important;
+          line-height: normal !important;
+          vertical-align: middle !important;
+        }
+        .signup2-control:focus {
+          border-color: #0c0c0c !important;
+          box-shadow: 0 0 0 2px rgba(12,12,12,0.1) !important;
+        }
+      `}</style>
+
       {/* Top row */}
       <div style={styles.topRow}><BackButton onClick={goBack} /></div>
 
@@ -200,9 +254,40 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
       {/* ── ACADEMIC INFO ── */}
       <div style={card}>
         <div style={cardTitle}>🎓 Academic Info</div>
-        <label style={fieldLabel}>Your Major</label>
-        <select style={dropdownStyle} value={major} onChange={(e) => setMajor(e.target.value)}>
+
+        {/* Major — required */}
+        <label style={fieldLabel}>
+          Your Major <span style={{ color: "red" }}>*</span>
+        </label>
+        <select
+          className="signup2-control"
+          value={major}
+          onChange={(e) => setMajor(e.target.value)}
+        >
+          <option value="">Select your major</option>
           {MAJORS.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+
+        {major === "Other" && (
+          <input
+            type="text"
+            className="signup2-control"
+            style={{ marginTop: "8px" }}
+            placeholder="Enter your major"
+            value={customMajor}
+            onChange={(e) => setCustomMajor(e.target.value)}
+          />
+        )}
+
+        {/* Year */}
+        <label style={{ ...fieldLabel, marginTop: "14px" }}>Your Year</label>
+        <select
+          className="signup2-control"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+        >
+          <option value="">Select your year</option>
+          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
 
@@ -218,19 +303,20 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
             {/* Class name */}
             <input
               type="text"
-              style={{ ...inputStyle, width: "100%", marginBottom: "6px" }}
+              className="signup2-control"
+              style={{ marginBottom: "6px" }}
               value={c.name}
               onChange={(e) => updateClass(idx, "name", e.target.value)}
               placeholder="Class name"
             />
             {/* Day + Time row */}
-            <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
               <div style={{ flex: 2 }}>
                 <label style={{ ...fieldLabel, fontSize: 11, color: "#aaa" }}>📅 Day</label>
                 <select
+                  className="signup2-control"
                   value={c.day}
                   onChange={(e) => updateClass(idx, "day", e.target.value)}
-                  style={{ ...dropdownStyle, width: "100%" }}
                 >
                   <option value="">Select day</option>
                   <option value="Monday">Monday</option>
@@ -245,19 +331,19 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
               <div style={{ flex: 1 }}>
                 <label style={{ ...fieldLabel, fontSize: 11, color: "#aaa" }}>🕐 Time</label>
                 <select
+                  className="signup2-control"
                   value={c.hour}
                   onChange={(e) => updateClass(idx, "hour", e.target.value)}
-                  style={{ ...dropdownStyle, width: "100%" }}
                 >
                   {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
-              <div style={{ flex: "0 0 64px" }}>
+              <div style={{ flex: "0 0 72px" }}>
                 <label style={{ ...fieldLabel, fontSize: 11, color: "#aaa" }}>AM/PM</label>
                 <select
+                  className="signup2-control"
                   value={c.period}
                   onChange={(e) => updateClass(idx, "period", e.target.value)}
-                  style={{ ...dropdownStyle, width: "100%" }}
                 >
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
@@ -278,7 +364,7 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
           <div key={idx} style={{ marginBottom: idx < locations.length - 1 ? "12px" : 0 }}>
             <label style={fieldLabel}>Location {idx + 1}</label>
             <select
-              style={dropdownStyle}
+              className="signup2-control"
               value={loc.selection}
               onChange={(e) => updateLocation(idx, "selection", e.target.value)}
             >
@@ -288,7 +374,8 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
             {loc.selection === "Other" && (
               <input
                 type="text"
-                style={{ ...inputStyle, marginTop: "8px" }}
+                className="signup2-control"
+                style={{ marginTop: "8px" }}
                 placeholder="Enter custom location"
                 value={loc.custom}
                 onChange={(e) => updateLocation(idx, "custom", e.target.value)}
@@ -308,7 +395,7 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
           <div key={idx} style={{ marginBottom: idx < methods.length - 1 ? "12px" : 0 }}>
             <label style={fieldLabel}>Method {idx + 1}</label>
             <select
-              style={dropdownStyle}
+              className="signup2-control"
               value={meth.selection}
               onChange={(e) => updateMethod(idx, "selection", e.target.value)}
             >
@@ -318,7 +405,8 @@ export default function SignUpPageTwo({ goBack, goNext, onComplete }) {
             {meth.selection === "Other" && (
               <input
                 type="text"
-                style={{ ...inputStyle, marginTop: "8px" }}
+                className="signup2-control"
+                style={{ marginTop: "8px" }}
                 placeholder="Enter custom method"
                 value={meth.custom}
                 onChange={(e) => updateMethod(idx, "custom", e.target.value)}
