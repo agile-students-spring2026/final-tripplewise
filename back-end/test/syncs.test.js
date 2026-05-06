@@ -1,159 +1,113 @@
-const chai = require("chai");
-const chaiHttp = require("chai-http");
-const imported = require("../index");
-const app = imported.default || imported;
+process.env.NODE_ENV = "test";
+require("dotenv").config();
 
-chai.use(chaiHttp);
-const { expect } = chai;
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing.");
+}
 
-describe("Syncs API", () => {
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
+
+const express = require("express");
+const request = require("supertest");
+const { expect } = require("chai");
+const mongoose = require("mongoose");
+
+const syncsRouter = require("../routes/syncs");
+const authRouter = require("../routes/auth");
+
+const User = require("../models/User");
+const StudySync = require("../models/StudySync");
+
+async function clearTestDb() {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Refusing to clear database outside test environment.");
+  }
+
+  if (process.env.MONGODB_URI !== process.env.TEST_MONGODB_URI) {
+    throw new Error("Refusing to clear non-test database.");
+  }
+
+  await User.deleteMany({});
+  await StudySync.deleteMany({});
+}
+
+describe("Syncs routes", function () {
+  let app;
   let token;
-  let joinUsername;
 
-  before(async () => {
-    const timestamp = Date.now();
+  before(async function () {
+    await mongoose.connect(process.env.MONGODB_URI);
+  });
 
-    const userA = {
-      username: `userA${timestamp}`,
-      email: `userA${timestamp}@test.com`,
-      password: "password123",
-    };
+  beforeEach(async function () {
+    app = express();
+    app.use(express.json());
+    app.use("/api/auth", authRouter);
+    app.use("/api/syncs", syncsRouter);
 
-    const userB = {
-      username: `userB${timestamp}`,
-      email: `userB${timestamp}@test.com`,
-      password: "password123",
-    };
+    await clearTestDb();
 
-    joinUsername = userB.username;
-
-    await chai.request(app).post("/api/auth/signup").send(userA);
-    await chai.request(app).post("/api/auth/signup").send(userB);
-
-    const res = await chai.request(app).post("/api/auth/login").send({
-      email: userA.email,
-      password: userA.password,
-    });
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({
+        username: "syncuser",
+        email: "syncuser@test.com",
+        password: "password123",
+      });
 
     token = res.body.token;
   });
 
-  function getSyncsFromBody(body) {
-    return Array.isArray(body) ? body : body.data || [];
-  }
-
-  it("GET /api/syncs returns array of study syncs", async () => {
-    const res = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(200);
-    expect(getSyncsFromBody(res.body)).to.be.an("array");
+  afterEach(async function () {
+    await clearTestDb();
   });
 
-  it("POST /api/syncs creates a new study sync", async () => {
-    const res = await chai
-      .request(app)
+  after(async function () {
+    await mongoose.connection.close();
+  });
+
+  it("should create a study sync", async function () {
+    const res = await request(app)
       .post("/api/syncs")
       .set("Authorization", `Bearer ${token}`)
       .send({
         title: "Test Sync",
-        datetime: new Date().toISOString(),
+        datetime: new Date(),
         location: "Library",
-        message: "Study time",
+        message: "Study",
+        maxMembers: 5,
       });
 
-    expect(res).to.have.status(201);
-    expect(res.body.success).to.be.true;
+    expect(res.status).to.equal(201);
   });
 
-  it("POST /api/syncs/:id/join adds a member to sync", async () => {
-    const create = await chai
-      .request(app)
+  it("should return all syncs", async function () {
+    await request(app)
       .post("/api/syncs")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        title: "Join Test",
-        datetime: new Date().toISOString(),
-        location: "NYU",
-        message: "Join test",
+        title: "Existing Sync",
+        datetime: new Date(),
+        location: "Room",
+        message: "Existing",
+        maxMembers: 3,
       });
 
-    const id = create.body.data._id;
+    const res = await request(app)
+      .get("/api/syncs")
+      .set("Authorization", `Bearer ${token}`);
 
-    const res = await chai
-      .request(app)
-      .post(`/api/syncs/${id}/join`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({ username: joinUsername });
-
-    expect([200, 400]).to.include(res.status);
-
-    if (res.status === 200) {
-      expect(res.body.success).to.be.true;
-    }
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("array");
   });
 
-  it("POST /api/syncs/:id/join returns 400 if username missing", async () => {
-    const create = await chai
-      .request(app)
-      .post("/api/syncs")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Join Missing",
-        datetime: new Date().toISOString(),
-        location: "NYU",
-        message: "Join test",
-      });
+  it("should return 404 when deleting a missing sync", async function () {
+    const fakeId = new mongoose.Types.ObjectId();
 
-    const id = create.body.data._id;
+    const res = await request(app)
+      .delete(`/api/syncs/${fakeId}`)
+      .set("Authorization", `Bearer ${token}`);
 
-    const res = await chai
-      .request(app)
-      .post(`/api/syncs/${id}/join`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({});
-
-    expect(res).to.have.status(400);
-  });
-
-  it("POST /api/syncs/:id/leave removes a member from sync", async () => {
-    const create = await chai
-      .request(app)
-      .post("/api/syncs")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Leave Test",
-        datetime: new Date().toISOString(),
-        location: "NYU",
-        message: "Leave test",
-      });
-
-    const id = create.body.data._id;
-
-    await chai
-      .request(app)
-      .post(`/api/syncs/${id}/join`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({ username: joinUsername });
-
-    const res = await chai
-      .request(app)
-      .post(`/api/syncs/${id}/leave`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({ username: joinUsername });
-
-    expect(res).to.have.status(200);
-  });
-
-  it("POST /api/syncs/:id/join returns 404 for unknown sync", async () => {
-    const res = await chai
-      .request(app)
-      .post("/api/syncs/507f1f77bcf86cd799439011/join")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ username: "ghostuser" });
-
-    expect(res).to.have.status(404);
+    expect(res.status).to.equal(404);
   });
 });

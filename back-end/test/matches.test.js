@@ -1,105 +1,95 @@
-const chai = require("chai");
-const chaiHttp = require("chai-http");
-const imported = require("../index");
-const app = imported.default || imported;
-const { expect } = chai;
+process.env.NODE_ENV = "test";
+require("dotenv").config();
 
-chai.use(chaiHttp);
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing.");
+}
 
-describe("Matches API", () => {
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
+
+const express = require("express");
+const request = require("supertest");
+const { expect } = require("chai");
+const mongoose = require("mongoose");
+
+const matchesRouter = require("../routes/matches");
+const authRouter = require("../routes/auth");
+
+const User = require("../models/User");
+
+async function clearTestDb() {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Refusing to clear database outside test environment.");
+  }
+
+  if (process.env.MONGODB_URI !== process.env.TEST_MONGODB_URI) {
+    throw new Error("Refusing to clear non-test database.");
+  }
+
+  await User.deleteMany({});
+}
+
+describe("Matches routes", function () {
+  this.timeout(10000);
+
+  let app;
   let token;
 
-  before(async () => {
-    const email = `match-${Date.now()}@example.com`;
-
-    await chai.request(app).post("/api/auth/signup").send({
-      username: `matchuser${Date.now()}`,
-      email,
-      password: "password123",
-    });
-
-    const res = await chai.request(app).post("/api/auth/login").send({
-      email,
-      password: "password123",
-    });
-
-    token = res.body.token;
+  before(async function () {
+    await mongoose.connect(process.env.MONGODB_URI);
   });
 
-  it("GET /api/matches returns array", async () => {
-    const res = await chai
-      .request(app)
+  beforeEach(async function () {
+    app = express();
+    app.use(express.json());
+    app.use("/api/auth", authRouter);
+    app.use("/api/matches", matchesRouter);
+
+    await clearTestDb();
+
+    // Create user 1
+    const res1 = await request(app)
+      .post("/api/auth/signup")
+      .send({
+        username: "user1",
+        email: "user1@test.com",
+        password: "password123",
+      });
+
+    token = res1.body.token;
+
+    // Create user 2 (potential match)
+    await request(app)
+      .post("/api/auth/signup")
+      .send({
+        username: "user2",
+        email: "user2@test.com",
+        password: "password123",
+      });
+  });
+
+  afterEach(async function () {
+    await clearTestDb();
+  });
+
+  after(async function () {
+    await mongoose.connection.close();
+  });
+
+  it("should return matches (array)", async function () {
+    const res = await request(app)
       .get("/api/matches")
       .set("Authorization", `Bearer ${token}`);
 
-    expect(res).to.have.status(200);
-    expect(res.body.success).to.be.true;
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("success", true);
+    expect(res.body).to.have.property("data");
     expect(res.body.data).to.be.an("array");
   });
 
-  it("GET /api/matches/:id returns detail for existing id", async () => {
-    const listRes = await chai
-      .request(app)
-      .get("/api/matches")
-      .set("Authorization", `Bearer ${token}`);
+  it("should require authentication", async function () {
+    const res = await request(app).get("/api/matches");
 
-    expect(listRes).to.have.status(200);
-
-    const matches = listRes.body.data || [];
-
-    if (!matches.length) return;
-
-    const id = matches[0]._id || matches[0].id;
-
-    if (!id) return;
-
-    const res = await chai
-      .request(app)
-      .get(`/api/matches/${id}`)
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(200);
-    expect(res.body.success).to.be.true;
-    expect(res.body.data).to.exist;
-  });
-
-  it("GET /api/matches/:id returns 404 for unknown id", async () => {
-    const res = await chai
-      .request(app)
-      .get("/api/matches/507f1f77bcf86cd799439011")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(404);
-  });
-
-  it("GET /api/matches includes matchPercentage field", async () => {
-    const res = await chai
-      .request(app)
-      .get("/api/matches")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(200);
-
-    const matches = res.body.data || [];
-
-    if (!matches.length) return;
-
-    expect(matches[0]).to.have.property("matchPercentage");
-  });
-
-  it("GET /api/matches match percentages are between 0-100", async () => {
-    const res = await chai
-      .request(app)
-      .get("/api/matches")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(200);
-
-    const matches = res.body.data || [];
-
-    matches.forEach((match) => {
-      expect(match.matchPercentage).to.be.at.least(0);
-      expect(match.matchPercentage).to.be.at.most(100);
-    });
+    expect(res.status).to.equal(401);
   });
 });

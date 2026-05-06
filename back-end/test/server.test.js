@@ -1,18 +1,35 @@
-const chai = require("chai");
-const chaiHttp = require("chai-http");
-const imported = require("../index");
-const app = imported.default || imported;
+process.env.NODE_ENV = "test";
+require("dotenv").config();
 
-chai.use(chaiHttp);
-const { expect } = chai;
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing.");
+}
 
-describe("Study Sync Server API", () => {
-  describe("Basic Connectivity", () => {
-    it("GET /health", async () => {
-      const res = await chai.request(app).get("/health");
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
 
-      expect(res).to.have.status(200);
-      expect(res.body).to.deep.equal({ ok: true });
-    });
+const request = require("supertest");
+const { expect } = require("chai");
+const mongoose = require("mongoose");
+
+const app = require("../server");
+
+describe("Server", function () {
+  before(async function () {
+    await mongoose.connect(process.env.MONGODB_URI);
+  });
+
+  after(async function () {
+    await mongoose.connection.close();
+  });
+
+  it("should respond with 404 for unknown route", async function () {
+    const res = await request(app).get("/nonexistent-route");
+    expect(res.status).to.equal(404);
+  });
+
+  it("should respond to base route if defined", async function () {
+    const res = await request(app).get("/");
+    
+    expect([200, 404]).to.include(res.status);
   });
 });

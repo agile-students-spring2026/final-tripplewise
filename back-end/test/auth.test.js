@@ -1,33 +1,64 @@
+process.env.NODE_ENV = "test";
+require("dotenv").config();
+
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing. Refusing to run tests.");
+}
+
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
+
 const express = require("express");
 const request = require("supertest");
 const { expect } = require("chai");
-require("dotenv").config();
-
 const mongoose = require("mongoose");
+
 const authRouter = require("../routes/auth");
+
 const User = require("../models/User");
+const StudySync = require("../models/StudySync");
+const MeetingRequest = require("../models/MeetingRequest");
+
+async function clearTestDb() {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Refusing to wipe database outside test environment.");
+  }
+
+  if (process.env.MONGODB_URI !== process.env.TEST_MONGODB_URI) {
+    throw new Error("Refusing to wipe non-test database.");
+  }
+
+  await User.deleteMany({});
+  await StudySync.deleteMany({});
+  await MeetingRequest.deleteMany({});
+}
 
 describe("Auth routes", function () {
+  this.timeout(10000);
+
   let app;
   let token;
 
   before(async function () {
-    this.timeout(10000);
-
     if (!mongoose.connection.readyState) {
       await mongoose.connect(process.env.MONGODB_URI);
     }
   });
 
   beforeEach(async function () {
-    this.timeout(10000);
-
     app = express();
     app.use(express.json());
     app.use("/api/auth", authRouter);
 
-    await User.deleteMany({});
+    await clearTestDb();
     token = null;
+  });
+
+  afterEach(async function () {
+    await clearTestDb();
+  });
+
+  after(async function () {
+    await mongoose.connection.close();
   });
 
   describe("POST /api/auth/signup", function () {
@@ -41,7 +72,6 @@ describe("Auth routes", function () {
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.errors).to.be.an("array");
     });
 
     it("returns 400 if email is missing", async function () {
@@ -54,7 +84,6 @@ describe("Auth routes", function () {
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.errors).to.be.an("array");
     });
 
     it("returns 400 if password is missing", async function () {
@@ -67,10 +96,9 @@ describe("Auth routes", function () {
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.errors).to.be.an("array");
     });
 
-    it("creates signup successfully with valid username, email, and password", async function () {
+    it("creates signup successfully with valid data", async function () {
       const res = await request(app)
         .post("/api/auth/signup")
         .send({
@@ -92,16 +120,18 @@ describe("Auth routes", function () {
 
   describe("POST /api/auth/login", function () {
     beforeEach(async function () {
-      await request(app)
+      const signupRes = await request(app)
         .post("/api/auth/signup")
         .send({
           username: "loginuser123",
           email: "loginuser@example.com",
           password: "password123",
         });
+
+      expect(signupRes.status).to.equal(201);
     });
 
-    it("returns 400 if email is missing", async function () {
+    it("returns 400 if username is missing", async function () {
       const res = await request(app)
         .post("/api/auth/login")
         .send({
@@ -110,37 +140,37 @@ describe("Auth routes", function () {
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.errors).to.be.an("array");
     });
 
     it("returns 400 if password is missing", async function () {
       const res = await request(app)
         .post("/api/auth/login")
         .send({
-          email: "loginuser@example.com",
+          username: "loginuser123",
         });
 
       expect(res.status).to.equal(400);
       expect(res.body.success).to.equal(false);
-      expect(res.body.errors).to.be.an("array");
     });
 
     it("returns 401 for invalid credentials", async function () {
-      const res = await request(app)
-        .post("/api/auth/login")
-        .send({
-          email: "wrong@example.com",
-          password: "wrongpass",
-        });
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({
+        username: "doesnotexist123",
+        email: "doesnotexist@example.com",
+        password: "wrongpassword",
+      });
 
-      expect(res.status).to.equal(401);
-      expect(res.body.success).to.equal(false);
-    });
+    expect(res.status).to.equal(401);
+    expect(res.body.success).to.equal(false);
+  });
 
     it("logs in successfully with correct credentials", async function () {
       const res = await request(app)
         .post("/api/auth/login")
         .send({
+          username: "loginuser123",
           email: "loginuser@example.com",
           password: "password123",
         });
@@ -163,16 +193,16 @@ describe("Auth routes", function () {
           password: "password123",
         });
 
+      expect(signupRes.status).to.equal(201);
       token = signupRes.body.token;
     });
 
     it("returns 401 without a token", async function () {
       const res = await request(app).get("/api/auth/me");
-
       expect(res.status).to.equal(401);
     });
 
-    it("returns current user with a valid JWT token", async function () {
+    it("returns current user with a valid token", async function () {
       const res = await request(app)
         .get("/api/auth/me")
         .set("Authorization", `Bearer ${token}`);

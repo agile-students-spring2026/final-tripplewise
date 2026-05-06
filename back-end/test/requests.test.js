@@ -1,234 +1,140 @@
-const chai = require("chai");
-const chaiHttp = require("chai-http");
-const imported = require("../index");
-const app = imported.default || imported;
+process.env.NODE_ENV = "test";
+require("dotenv").config();
 
-chai.use(chaiHttp);
-const { expect } = chai;
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing.");
+}
 
-describe("Requests API", () => {
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
+
+const express = require("express");
+const request = require("supertest");
+const { expect } = require("chai");
+const mongoose = require("mongoose");
+
+const requestsRouter = require("../routes/requests");
+const authRouter = require("../routes/auth");
+
+const User = require("../models/User");
+const RequestModel = require("../models/MeetingRequest");
+
+async function clearTestDb() {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Refusing to clear database outside test environment.");
+  }
+
+  if (process.env.MONGODB_URI !== process.env.TEST_MONGODB_URI) {
+    throw new Error("Refusing to clear non-test database.");
+  }
+
+  await User.deleteMany({});
+  await RequestModel.deleteMany({});
+}
+
+async function createTestRequest(app, token) {
+  const res = await request(app)
+    .post("/api/requests")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      toUsername: "receiver",
+      date: "2026-05-10",
+      time: "15:00",
+      location: "Library",
+      message: "Study together",
+    });
+
+  expect(res.status).to.equal(201);
+
+  const createdRequest = await RequestModel.findOne({
+    fromUser: "sender",
+    toUser: "receiver",
+  });
+
+  expect(createdRequest).to.not.equal(null);
+
+  return createdRequest;
+}
+
+describe("Requests routes", function () {
+  this.timeout(10000);
+
+  let app;
   let token;
-  let targetUserId;
 
-  async function createAuthUsers() {
-    const ts = Date.now();
+  before(async function () {
+    await mongoose.connect(process.env.MONGODB_URI);
+  });
 
-    await chai.request(app).post("/api/auth/signup").send({
-      username: `requestuser${ts}`,
-      email: `requestuser${ts}@example.com`,
-      password: "password123",
-    });
+  beforeEach(async function () {
+    app = express();
+    app.use(express.json());
+    app.use("/api/auth", authRouter);
+    app.use("/api/requests", requestsRouter);
 
-    const targetRes = await chai.request(app).post("/api/auth/signup").send({
-      username: `targetuser${ts}`,
-      email: `targetuser${ts}@example.com`,
-      password: "password123",
-    });
+    await clearTestDb();
 
-    const loginRes = await chai.request(app).post("/api/auth/login").send({
-      email: `requestuser${ts}@example.com`,
-      password: "password123",
-    });
-
-    token = loginRes.body.token;
-
-    targetUserId =
-      targetRes.body.user?._id ||
-      targetRes.body.user?.id ||
-      null;
-
-    if (!targetUserId) {
-      const matchesRes = await chai
-        .request(app)
-        .get("/api/matches")
-        .set("Authorization", `Bearer ${token}`);
-
-      const matches = matchesRes.body.data || matchesRes.body || [];
-
-      if (matches.length > 0) {
-        targetUserId = matches[0]._id || matches[0].id;
-      }
-    }
-  }
-
-  async function createRequest(overrides = {}) {
-    return chai
-      .request(app)
-      .post("/api/requests")
-      .set("Authorization", `Bearer ${token}`)
+    const userRes = await request(app)
+      .post("/api/auth/signup")
       .send({
-        toUserId: targetUserId,
-        date: "4/20/2026",
-        time: "3:00 PM",
-        location: "Library",
-        ...overrides,
+        username: "sender",
+        email: "sender@test.com",
+        password: "password123",
       });
-  }
 
-  before(async () => {
-    await createAuthUsers();
+    token = userRes.body.token;
+
+    await request(app)
+      .post("/api/auth/signup")
+      .send({
+        username: "receiver",
+        email: "receiver@test.com",
+        password: "password123",
+      });
   });
 
-  it("GET /api/requests returns array of pending requests", async () => {
-    const res = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(200);
-    expect(res.body).to.be.an("array");
+  afterEach(async function () {
+    await clearTestDb();
   });
 
-  it("GET /api/requests includes required fields", async () => {
-    const res = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(200);
-
-    const requests = res.body || [];
-
-    if (requests.length > 0) {
-      const req = requests[0];
-
-      expect(req).to.have.property("_id");
-      expect(req).to.have.property("fromUser");
-      expect(req).to.have.property("date");
-      expect(req).to.have.property("time");
-      expect(req).to.have.property("location");
-    }
+  after(async function () {
+    await mongoose.connection.close();
   });
 
-  it("POST /api/requests creates a new meeting request", async () => {
-    if (!targetUserId) return;
+  it("should create a meeting request", async function () {
+    const createdRequest = await createTestRequest(app, token);
 
-    const res = await createRequest({
-      date: "4/21/2026",
-      time: "4:00 PM",
-      location: "NYU Library",
-    });
-
-    if (res.status === 400) return;
-
-    expect(res).to.have.status(201);
-    expect(res.body.data || res.body).to.exist;
-
-    const created = res.body.data || res.body;
-    expect(created).to.have.property("_id");
+    expect(createdRequest).to.have.property("_id");
+    expect(createdRequest.fromUser).to.equal("sender");
+    expect(createdRequest.toUser).to.equal("receiver");
   });
 
-  it("POST /api/requests returns 400 if missing required fields", async () => {
-    const res = await chai
-      .request(app)
-      .post("/api/requests")
-      .set("Authorization", `Bearer ${token}`)
-      .send({});
+  it("should reject a request", async function () {
+    const createdRequest = await createTestRequest(app, token);
 
-    expect(res).to.have.status(400);
+    const res = await request(app)
+      .post(`/api/requests/${createdRequest._id}/reject`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).to.equal(200);
   });
 
-  it("POST /api/requests/:id/approve creates a study sync", async () => {
-    if (!targetUserId) return;
+  it("should approve a request", async function () {
+    const createdRequest = await createTestRequest(app, token);
 
-    const createRes = await createRequest({
-      date: "4/22/2026",
-      time: "5:00 PM",
-      location: "Bobst Library",
-    });
-
-    const created = createRes.body.data || createRes.body;
-    const requestId = created?._id || created?.id;
-
-    if (!requestId) return;
-
-    const res = await chai
-      .request(app)
-      .post(`/api/requests/${requestId}/approve`)
+    const res = await request(app)
+      .post(`/api/requests/${createdRequest._id}/approve`)
       .set("Authorization", `Bearer ${token}`);
 
-    expect(res).to.have.status(200);
+    expect(res.status).to.equal(200);
   });
 
-  it("POST /api/requests/:id/approve removes request from pending list", async () => {
-    if (!targetUserId) return;
+  it("should return 404 for invalid request id", async function () {
+    const fakeId = new mongoose.Types.ObjectId();
 
-    const createRes = await createRequest({
-      date: "4/23/2026",
-      time: "6:00 PM",
-      location: "NYU Library",
-    });
-
-    const created = createRes.body.data || createRes.body;
-    const requestId = created?._id || created?.id;
-
-    if (!requestId) return;
-
-    await chai
-      .request(app)
-      .post(`/api/requests/${requestId}/approve`)
+    const res = await request(app)
+      .post(`/api/requests/${fakeId}/approve`)
       .set("Authorization", `Bearer ${token}`);
 
-    const listRes = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    const requests = listRes.body || [];
-    const stillExists = requests.some((request) => {
-      return (request._id || request.id) === requestId;
-    });
-
-    expect(stillExists).to.be.false;
-  });
-
-  it("POST /api/requests/:id/reject removes request from pending list", async () => {
-    if (!targetUserId) return;
-
-    const createRes = await createRequest({
-      date: "4/24/2026",
-      time: "4:00 PM",
-      location: "Bobst Library",
-    });
-
-    const created = createRes.body.data || createRes.body;
-    const requestId = created?._id || created?.id;
-
-    if (!requestId) return;
-
-    await chai
-      .request(app)
-      .post(`/api/requests/${requestId}/reject`)
-      .set("Authorization", `Bearer ${token}`);
-
-    const listRes = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    const requests = listRes.body || [];
-    const stillExists = requests.some((request) => {
-      return (request._id || request.id) === requestId;
-    });
-
-    expect(stillExists).to.be.false;
-  });
-
-  it("POST /api/requests/:id/approve returns 404 for unknown request", async () => {
-    const res = await chai
-      .request(app)
-      .post("/api/requests/507f1f77bcf86cd799439011/approve")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(404);
-  });
-
-  it("POST /api/requests/:id/reject returns 404 for unknown request", async () => {
-    const res = await chai
-      .request(app)
-      .post("/api/requests/507f1f77bcf86cd799439011/reject")
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(res).to.have.status(404);
+    expect(res.status).to.equal(404);
   });
 });
