@@ -20,7 +20,7 @@ services:
       - "3001:3001"
     environment:
       MONGODB_URI: ${MONGODB_URI}
-      TEST_MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
+      TEST_MONGODB_URI: ${TEST_MONGODB_URI}
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3001

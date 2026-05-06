@@ -30,7 +30,9 @@ jobs:
         working-directory: back-end
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          TEST_MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
+          JWT_SE CRET: ${{ secrets.JWT_SECRET }}
+          NODE_ENV: test
         run: npm test
 
   frontend:
