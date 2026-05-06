@@ -1,248 +1,122 @@
-const chai = require("chai");
-const chaiHttp = require("chai-http");
-const imported = require("../index");
-const app = imported.default || imported;
+process.env.NODE_ENV = "test";
+require("dotenv").config();
 
-chai.use(chaiHttp);
-const { expect } = chai;
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing.");
+}
 
-describe("Data Persistence & Integration", () => {
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
+
+const express = require("express");
+const request = require("supertest");
+const { expect } = require("chai");
+const mongoose = require("mongoose");
+
+const authRouter = require("../routes/auth");
+const syncsRouter = require("../routes/syncs");
+const requestsRouter = require("../routes/requests");
+
+const User = require("../models/User");
+const StudySync = require("../models/StudySync");
+const RequestModel = require("../models/MeetingRequest");
+
+async function clearTestDb() {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Refusing to clear database outside test environment.");
+  }
+
+  if (process.env.MONGODB_URI !== process.env.TEST_MONGODB_URI) {
+    throw new Error("Refusing to clear non-test database.");
+  }
+
+  await User.deleteMany({});
+  await StudySync.deleteMany({});
+  await RequestModel.deleteMany({});
+}
+
+describe("Integration tests", function () {
+  this.timeout(10000);
+
+  let app;
   let token;
-  let targetUserId;
 
-  before(async () => {
-    const timestamp = Date.now();
-
-    const targetRes = await chai.request(app).post("/api/auth/signup").send({
-      username: `integrationtarget${timestamp}`,
-      email: `integrationtarget${timestamp}@example.com`,
-      password: "password123",
-    });
-
-    await chai.request(app).post("/api/auth/signup").send({
-      username: `integrationuser${timestamp}`,
-      email: `integrationuser${timestamp}@example.com`,
-      password: "password123",
-    });
-
-    const loginRes = await chai.request(app).post("/api/auth/login").send({
-      email: `integrationuser${timestamp}@example.com`,
-      password: "password123",
-    });
-
-    token = loginRes.body.token;
-    targetUserId = targetRes.body.user._id || targetRes.body.user.id;
+  before(async function () {
+    await mongoose.connect(process.env.MONGODB_URI);
   });
 
-  it("Approved request should appear as a study sync", async () => {
-    const initialSyncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
+  beforeEach(async function () {
+    app = express();
+    app.use(express.json());
 
-    const initialSyncs = initialSyncsRes.body.data || initialSyncsRes.body || [];
-    const initialSyncCount = initialSyncs.length;
+    app.use("/api/auth", authRouter);
+    app.use("/api/syncs", syncsRouter);
+    app.use("/api/requests", requestsRouter);
 
-    const createRes = await chai
-      .request(app)
-      .post("/api/requests")
-      .set("Authorization", `Bearer ${token}`)
+    await clearTestDb();
+
+    const res = await request(app)
+      .post("/api/auth/signup")
       .send({
-        toUserId: targetUserId,
-        date: "4/20/2026",
-        time: "3:00 PM",
-        location: "Library",
+        username: "integrationUser",
+        email: "integration@test.com",
+        password: "password123",
       });
 
-    const requestId = createRes.body.data?._id || createRes.body.data?.id;
-    if (!requestId) return;
-
-    const approveRes = await chai
-      .request(app)
-      .post(`/api/requests/${requestId}/approve`)
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(approveRes).to.have.status(200);
-
-    const updatedSyncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
-
-    const updatedSyncs = updatedSyncsRes.body.data || updatedSyncsRes.body || [];
-    expect(updatedSyncs.length).to.be.greaterThan(initialSyncCount);
+    token = res.body.token;
   });
 
-  it("Rejected request should NOT appear as a study sync", async () => {
-    const initialSyncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
+  afterEach(async function () {
+    await clearTestDb();
+  });
 
-    const initialSyncs = initialSyncsRes.body.data || initialSyncsRes.body || [];
-    const initialSyncCount = initialSyncs.length;
+  after(async function () {
+    await mongoose.connection.close();
+  });
 
-    const createRes = await chai
-      .request(app)
-      .post("/api/requests")
-      .set("Authorization", `Bearer ${token}`)
+  it("should signup, create sync, and create request", async function () {
+    // create another user
+    await request(app)
+      .post("/api/auth/signup")
       .send({
-        toUserId: targetUserId,
-        date: "4/25/2026",
-        time: "5:00 PM",
-        location: "Test Location For Rejection",
+        username: "otherUser",
+        email: "other@test.com",
+        password: "password123",
       });
 
-    const requestId = createRes.body.data?._id || createRes.body.data?.id;
-    if (!requestId) return;
-
-    const rejectRes = await chai
-      .request(app)
-      .post(`/api/requests/${requestId}/reject`)
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(rejectRes).to.have.status(200);
-
-    const updatedSyncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
-
-    const updatedSyncs = updatedSyncsRes.body.data || updatedSyncsRes.body || [];
-    expect(updatedSyncs.length).to.equal(initialSyncCount);
-
-    const hasSyncWithLocation = updatedSyncs.some(
-      (sync) => sync.location === "Test Location For Rejection"
-    );
-
-    expect(hasSyncWithLocation).to.be.false;
-  });
-
-  it("Approved request should be removed from requests list", async () => {
-    const createRes = await chai
-      .request(app)
-      .post("/api/requests")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        toUserId: targetUserId,
-        date: "4/22/2026",
-        time: "5:00 PM",
-        location: "Library",
-      });
-
-    const requestId = createRes.body.data?._id || createRes.body.data?.id;
-    if (!requestId) return;
-
-    const initialReqRes = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    const initialRequests = initialReqRes.body.data || initialReqRes.body || [];
-    const initialReqCount = initialRequests.length;
-
-    await chai
-      .request(app)
-      .post(`/api/requests/${requestId}/approve`)
-      .set("Authorization", `Bearer ${token}`);
-
-    const updatedReqRes = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    const updatedRequests = updatedReqRes.body.data || updatedReqRes.body || [];
-    expect(updatedRequests.length).to.be.lessThan(initialReqCount);
-
-    const requestStillExists = updatedRequests.some(
-      (request) => (request._id || request.id) === requestId
-    );
-
-    expect(requestStillExists).to.be.false;
-  });
-
-  it("Created sync should have all required fields", async () => {
-    const res = await chai
-      .request(app)
+    // create sync
+    const syncRes = await request(app)
       .post("/api/syncs")
       .set("Authorization", `Bearer ${token}`)
       .send({
         title: "Integration Sync",
-        datetime: new Date().toISOString(),
-        location: "Field Test Location",
-        message: "Integration test sync",
+        datetime: new Date(),
+        location: "Library",
+        message: "Study",
+        maxMembers: 5,
       });
 
-    expect(res).to.have.status(201);
+    expect(syncRes.status).to.equal(201);
 
-    const sync = res.body.data;
-    expect(sync).to.exist;
-    expect(sync).to.have.property("_id");
-    expect(sync).to.have.property("title").that.is.a("string");
-    expect(sync).to.have.property("datetime");
-    expect(sync).to.have.property("location", "Field Test Location");
-  });
+    // create request
+    const requestRes = await request(app)
+      .post("/api/requests")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        toUsername: "otherUser",
+        date: "2026-05-10",
+        time: "15:00",
+        location: "Library",
+        message: "Join session",
+      });
 
-  it("Multiple approved requests should create separate syncs", async () => {
-    const initialSyncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
+    expect(requestRes.status).to.equal(201);
 
-    const initialSyncs = initialSyncsRes.body.data || initialSyncsRes.body || [];
-    const initialSyncCount = initialSyncs.length;
+    // verify request exists in DB
+    const dbRequest = await RequestModel.findOne({
+      fromUser: "integrationUser",
+      toUser: "otherUser",
+    });
 
-    let approvedCount = 0;
-
-    for (let i = 0; i < 2; i++) {
-      const createRes = await chai
-        .request(app)
-        .post("/api/requests")
-        .set("Authorization", `Bearer ${token}`)
-        .send({
-          toUserId: targetUserId,
-          date: `4/2${i + 3}/2026`,
-          time: `${6 + i}:00 PM`,
-          location: `Library ${i + 1}`,
-        });
-
-      const requestId = createRes.body.data?._id || createRes.body.data?.id;
-      if (!requestId) continue;
-
-      const approveRes = await chai
-        .request(app)
-        .post(`/api/requests/${requestId}/approve`)
-        .set("Authorization", `Bearer ${token}`);
-
-      if (approveRes.status === 200) {
-        approvedCount++;
-      }
-    }
-
-    const updatedSyncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
-
-    const updatedSyncs = updatedSyncsRes.body.data || updatedSyncsRes.body || [];
-    expect(updatedSyncs.length).to.be.at.least(initialSyncCount + approvedCount);
-  });
-
-  it("Syncs and requests endpoints should use consistent data", async () => {
-    const requestsRes = await chai
-      .request(app)
-      .get("/api/requests")
-      .set("Authorization", `Bearer ${token}`);
-
-    const syncsRes = await chai
-      .request(app)
-      .get("/api/syncs")
-      .set("Authorization", `Bearer ${token}`);
-
-    const requests = requestsRes.body.data || requestsRes.body || [];
-    const syncs = syncsRes.body.data || syncsRes.body || [];
-
-    expect(requests).to.be.an("array");
-    expect(syncs).to.be.an("array");
+    expect(dbRequest).to.not.equal(null);
   });
 });

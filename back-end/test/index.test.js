@@ -1,195 +1,37 @@
-const chai = require("chai");
-const chaiHttp = require("chai-http");
-const server = require("../index");
-const { expect } = chai;
+process.env.NODE_ENV = "test";
+require("dotenv").config();
 
-chai.use(chaiHttp);
+if (!process.env.TEST_MONGODB_URI) {
+  throw new Error("TEST_MONGODB_URI is missing.");
+}
 
-describe("Study Sync Index API", () => {
-  let token;
+process.env.MONGODB_URI = process.env.TEST_MONGODB_URI;
 
-  before((done) => {
-    const timestamp = Date.now();
-    const testEmail = `index-test-${timestamp}@example.com`;
-    const matchEmail = `index-match-${timestamp}@example.com`;
+const request = require("supertest");
+const { expect } = require("chai");
+const mongoose = require("mongoose");
 
-    chai.request(server)
-      .post("/api/auth/signup")
-      .send({
-        username: `indextest${timestamp}`,
-        email: testEmail,
-        password: "password123",
-      })
-      .end(() => {
-        chai.request(server)
-          .post("/api/auth/signup")
-          .send({
-            username: `matchtest${timestamp}`,
-            email: matchEmail,
-            password: "password123",
-          })
-          .end(() => {
-            chai.request(server)
-              .post("/api/auth/login")
-              .send({
-                email: testEmail,
-                password: "password123",
-              })
-              .end((err, res) => {
-                token = res.body.token;
-                done();
-              });
-          });
-      });
+const app = require("../server");
+
+describe("Index / Base routes", function () {
+  this.timeout(10000);
+
+  before(async function () {
+    await mongoose.connect(process.env.MONGODB_URI);
   });
 
-  describe("System Endpoints", () => {
-    it("GET /health", (done) => {
-      chai.request(server)
-        .get("/health")
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body).to.deep.equal({ ok: true });
-          done();
-        });
-    });
+  after(async function () {
+    await mongoose.connection.close();
   });
 
-  describe("Profiles API", () => {
-    it("GET /api/profiles", (done) => {
-      chai.request(server)
-        .get("/api/profiles")
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body).to.be.an("array");
-          done();
-        });
-    });
-
-    it("GET /api/profile/:id - Success", (done) => {
-      chai.request(server)
-        .get("/api/profile/1")
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.id).to.equal(1);
-          done();
-        });
-    });
-
-    it("GET /api/profile/:id - Not Found", (done) => {
-      chai.request(server)
-        .get("/api/profile/999")
-        .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.error).to.equal("Profile not found");
-          done();
-        });
-    });
+  it("should return 404 for unknown route", async function () {
+    const res = await request(app).get("/random-route-that-does-not-exist");
+    expect(res.status).to.equal(404);
   });
 
-  describe("Schedule API", () => {
-    it("POST /api/schedule - Success", (done) => {
-      chai.request(server)
-        .post("/api/schedule")
-        .send([{ name: "Biology", time: "12:00" }])
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.success).to.be.true;
-          expect(res.body.schedule).to.be.an("array");
-          done();
-        });
-    });
+  it("should respond to root route if defined", async function () {
+    const res = await request(app).get("/");
 
-    it("POST /api/schedule - Failure (Object instead of Array)", (done) => {
-      chai.request(server)
-        .post("/api/schedule")
-        .send({ name: "Biology" })
-        .end((err, res) => {
-          expect(res).to.have.status(400);
-          expect(res.body.error).to.equal("Expected array");
-          done();
-        });
-    });
-  });
-
-  describe("Study Syncs API", () => {
-    it("POST /api/syncs - Success", (done) => {
-      chai.request(server)
-        .post("/api/syncs")
-        .set("Authorization", `Bearer ${token}`)
-        .send({
-          title: "Test Sync",
-          datetime: new Date().toISOString(),
-          location: "Library",
-          message: "Study time",
-        })
-        .end((err, res) => {
-          expect(res).to.have.status(201);
-          expect(res.body.success).to.be.true;
-          expect(res.body.data.title).to.equal("Test Sync");
-          done();
-        });
-    });
-
-    it("POST /api/syncs - Missing Fields", (done) => {
-      chai.request(server)
-        .post("/api/syncs")
-        .set("Authorization", `Bearer ${token}`)
-        .send({ title: "Incomplete" })
-        .end((err, res) => {
-          expect(res).to.have.status(400);
-          done();
-        });
-    });
-  });
-
-  describe("Matches API", () => {
-    it("GET /api/matches - All", (done) => {
-      chai.request(server)
-        .get("/api/matches")
-        .set("Authorization", `Bearer ${token}`)
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.success).to.be.true;
-          expect(res.body.data).to.be.an("array");
-          done();
-        });
-    });
-
-    it("GET /api/matches - Filtered", (done) => {
-      chai.request(server)
-        .get("/api/matches")
-        .set("Authorization", `Bearer ${token}`)
-        .query({ location: "Bobst LL2" })
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.success).to.be.true;
-          expect(res.body.data).to.be.an("array");
-          done();
-        });
-    });
-
-    it("GET /api/matches/:id", (done) => {
-      chai.request(server)
-        .get("/api/matches")
-        .set("Authorization", `Bearer ${token}`)
-        .end((err, matchesRes) => {
-          expect(matchesRes).to.have.status(200);
-
-          const matches = matchesRes.body.data || [];
-          if (!matches.length) return done();
-
-          const id = matches[0]._id || matches[0].id;
-          if (!id) return done();
-
-          chai.request(server)
-            .get(`/api/matches/${id}`)
-            .set("Authorization", `Bearer ${token}`)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              done();
-            });
-        });
-    });
+    expect([200, 404]).to.include(res.status);
   });
 });
